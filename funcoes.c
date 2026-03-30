@@ -284,7 +284,7 @@ void update (char* binario, int n){
         
         //se o registro é encontrado, 
         if(regcab.topo == -1){
-            byteoffset = regcab.proxRRN *80;
+            byteoffset = regcab.proxRRN *  MAX_TAM_REG;
             fseek(binario,  byteoffset, SEEK_SET);
             dados registro = ler_regdados(binario, byteoffset);
             /*
@@ -292,7 +292,7 @@ void update (char* binario, int n){
             */
             escreve_regdados(binario, registro, byteoffset);
         } else{
-            byteoffset = regcab.topo * 80;
+            byteoffset = regcab.topo *  MAX_TAM_REG;
             fseek(binario,  byteoffset, SEEK_SET);
             regcab.topo = RRN;
             escreve_cabecalho(binario, regcab);
