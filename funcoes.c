@@ -3,7 +3,7 @@
 #include <string.h>
 #include "registros.c"
 
-#define MAX_TAM_REG 120
+#define MAX_TAM_REG 80
 
 // faz a busca no arquivo .csv de acordo com o codigo primeiro campo
 void busca_codigo(int CodEstacao, FILE* ponteiro_arquivo) {
