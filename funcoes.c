@@ -3,7 +3,6 @@
 #include <string.h>
 #include "registros.c"
 
-#define MAX_TAM_REG 80
 
 // faz a busca no arquivo .csv de acordo com o codigo primeiro campo
 void busca_codigo(int CodEstacao, FILE* ponteiro_arquivo) {
@@ -22,7 +21,7 @@ void busca_codigo(int CodEstacao, FILE* ponteiro_arquivo) {
 
     // se o arquivo estiver no começo, pula o cabeçalho
     if (posicao_inicial == 0) {
-        if (fgets(registro, MAX_TAM_REG, ponteiro_arquivo) == NULL) {
+        if (fgets(registro, MAX_TAM_CABECALHO, ponteiro_arquivo) == NULL) {
             printf("Falha no processamento do arquivo.");
             return;
         }
@@ -198,20 +197,43 @@ void busca_mascara(FILE *ponteiro_arquivo, unsigned char mascara, char valores[8
 
 
 
-/* Função que lê os m nomeCampo e dadoCampo. Busca no arquivo binário os registros que tem esses campos e valores.
-Retorna a lista de rrn com esses valores .*/
+/* Função que dados o(S) campo(s) e valor(es), busca o registro q tem esse valor e retorna a lista de rrn 
+Se nenhum for encontrado, retorna lista vazia.
+file deve estar aberto para leitura.
+*/
 
-int* busca_registro(int m){
-    int *rrns = (int*)malloc(m * sizeof(int));
-    for (int i=0; i<m; i++){
-        char nomeCampo[50];
-        char valorCampo[50];
-        scanf("%s %s", nomeCampo, valorCampo);
-        //busca o campo e o valor no arquivo binário. Se encontrar, retorna o RRN do registro.
-        rrns = //rrn da busca;
+int* busca_registro(FILE* binario, int m){
+    char campos[m][20];
+    char valores[m][50];
+
+    for(int i=0; i<m; i++){  
+        //ler os m campo/valores que preciso buscar
+        scanf("%s %s", campos[i], valores[i]);
     }
+    // pulando o cabecalho - comeca o reg.dados
+    fseek(binario, TAM_CABECALHO, SEEK_SET); 
     
+    dados reg;
+    int rrn_atual = 0;
+    int num_rrns = 0;
+    int* rrns_encontrados = malloc(sizeof(int) * 100); // aloca espaço para até 100
+    // Percorre o arquivo até o fim
+    while (fread(&reg.removido, sizeof(char), 1, binario)) {
+        reg = ler_regdados(binario, rrn_atual * TAM_REG );
 
+        // Só verifica registros que NÃO foram removidos
+        if (reg.removido == '0') {
+            if (compara_registro(--)) {
+                
+                rrns_encontrados[num_rrns] = rrn_atual;
+                (num_rrns)++;
+            }
+        }
+        rrn_atual++;
+    }
+    rrns_encontrados[num_rrns] = -1; // marca o fim da lista
+
+    return rrns_encontrados; // retorna a lista de RRN encontrados
 }
 
 
@@ -234,25 +256,30 @@ void delete (char* binario, int n){
         /*Usa uma função pra buscar os registros com esses campos.
         Retorna o rrn dos registros encontrados.
         */
+        int m;
+        scanf("%d", &m);
+        int* rrns_encontrados = busca_registro(binario, m); //retorna a lista de rrn encontrados
         
-        //se o registro é encontrado, 
-        if(RRN< regcab.proxRRN){
-            int byteoffset = RRN *80;
-            fseek(binario,  byteoffset, SEEK_SET);
-            dados registro = ler_regdados(binario, byteoffset);
-            if(registro.removido == '0'){
-                /*registro encontrado e n está removido
-                Então: marca como removido == 1; atualiza o topo e o proximo registro removido*/
-                registro.removido = '1';
-                registro.proximo = regcab.topo;
-                regcab.topo = RRN;
-                escreve_cabecalho(binario, regcab);
-                escreve_regdados(binario, registro, byteoffset);
-
+        for(int j=0; j<100; j++){
+            //se o registro é encontrado, 
+            if(   rrns_encontrados[j]  < regcab.proxRRN){
+                int byteoffset = rrns_encontrados[j] *80;
+                fseek(binario,  byteoffset, SEEK_SET);
+                dados registro = ler_regdados(binario, byteoffset);
+                if(registro.removido == '0'){
+                    /*registro encontrado e n está removido
+                    Então: marca como removido == 1; atualiza o topo e o proximo registro removido*/
+                    registro.removido = '1';
+                    registro.proximo = regcab.topo;
+                    regcab.topo = rrns_encontrados[j];
+                    escreve_cabecalho(binario, regcab);
+                    escreve_regdados(binario, registro, byteoffset);
+    
+                }
+            } else{
+                //registro nao encontrado
+                printf("Registro nao encontrado\n");
             }
-        } else{
-            //registro nao encontrado
-            printf("Registro nao encontrado\n");
         }
     
     }
@@ -284,7 +311,7 @@ void update (char* binario, int n){
         
         //se o registro é encontrado, 
         if(regcab.topo == -1){
-            byteoffset = regcab.proxRRN *  MAX_TAM_REG;
+            byteoffset = regcab.proxRRN *  TAM_REG;
             fseek(binario,  byteoffset, SEEK_SET);
             dados registro = ler_regdados(binario, byteoffset);
             /*
@@ -292,7 +319,7 @@ void update (char* binario, int n){
             */
             escreve_regdados(binario, registro, byteoffset);
         } else{
-            byteoffset = regcab.topo *  MAX_TAM_REG;
+            byteoffset = regcab.topo *  TAM_REG;
             fseek(binario,  byteoffset, SEEK_SET);
             regcab.topo = RRN;
             escreve_cabecalho(binario, regcab);
@@ -308,3 +335,4 @@ void update (char* binario, int n){
 
     BinarionaTela(binario);
 }
+
