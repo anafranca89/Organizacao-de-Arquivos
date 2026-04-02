@@ -1,6 +1,9 @@
 #ifndef REGISTROS_H
 #define REGISTROS_H
 
+#define TAM_REG 80
+#define TAM_CABECALHO 17
+
 
 /*A representação é de 17 bytes. Como saber se tem essa qts de bytes....
 pela ordem que foi chamado as variáveis*/
