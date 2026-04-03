@@ -307,29 +307,30 @@ void update (char* binario, int n){
         /*Usa uma função pra buscar os registros com esses campos.
         Retorna o rrn dos registros encontrados.
         */
+        int m;
+        scanf("%d", &m);
+        int* rrns_encontrados = busca_registro(binario, m); //retorna a lista de rrn encontrados
        // ler o p nomecampo valor campo a ser atualizado.
+        int p;
+        scanf("%d", &p);
+        
+        for(int j=0; j<p; j++){
+            // ler os valores e campos que vao substituir
+        }
         
         //se o registro é encontrado, 
-        if(regcab.topo == -1){
-            byteoffset = regcab.proxRRN *  TAM_REG;
+        if(rrns_encontrados != NULL){
+            byteoffset = rrns_encontrados[k]*  TAM_REG;
             fseek(binario,  byteoffset, SEEK_SET);
             dados registro = ler_regdados(binario, byteoffset);
             /*
-            atualiza os campos necessários
+            reescreve os campos necessários
             */
             escreve_regdados(binario, registro, byteoffset);
         } else{
-            byteoffset = regcab.topo *  TAM_REG;
-            fseek(binario,  byteoffset, SEEK_SET);
-            regcab.topo = RRN;
-            escreve_cabecalho(binario, regcab);
-            dados registro = ler_regdados(binario, byteoffset);
-            /*
-            atualiza os campos necessários
-            */
-            escreve_regdados(binario, registro, byteoffset);
+            // não foi encontrado um registro com aquela busca
         }
-
+    BinarionaTela(binario);
     
     }
 
