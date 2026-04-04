@@ -13,7 +13,7 @@ void ler_cabecalho(FILE* ponteiro_arquivo, char *status, int *topo, int *proxRRN
 
 void escreve_cabecalho(FILE* ponteiro_arquivo, char status, int topo, int proxRRN, int nroEstacoes, int nroParesEstacoes);
 
-void ler_regdados(FILE* ponteiro_arquivo, int byteoffset,
+void ler_regdados(FILE* ponteiro_arquivo, 
                   char *removido,
                   int *proximo,
                   int *codEstacao,
@@ -27,7 +27,7 @@ void ler_regdados(FILE* ponteiro_arquivo, int byteoffset,
                   int *tamNomeLinha,
                   char **nomeLinha);
 
-void escreve_regdados(FILE* ponteiro_arquivo, int byteoffset,
+void escreve_regdados(FILE* ponteiro_arquivo, 
                       char removido,
                       int proximo,
                       int codEstacao,
