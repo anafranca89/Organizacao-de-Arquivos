@@ -20,17 +20,16 @@ FILE * escrever_binario(char *arqbin){
 }
 
 
-/*Dado um arquivo binário, a função precisa ler o registro de cabeçalho */
-void ler_cabecalho(char * arqbin){
-    cabecalho regcab;
+/*Dado um arquivo binário e parâmentros
+ATENÇÃO: ponteiros deve estar bem posi
+*/
+void ler_cabecalho(FILE* ponteiro_arquivo, char *arqbin, char *status, int *topo, int *proxRRN, int *nroEstacoes, int *nroParesEstacoes){
     FILE *bin = ler_binario(arqbin);
-    fread(&regcab.status, sizeof(char), 1, bin);
-    fread(&regcab.topo, sizeof(int), 1, bin);
-    fread(&regcab.proxRRN, sizeof(int), 1, bin);
-    fread(&regcab.nroEstacoes, sizeof(int), 1, bin);
-    fread(&regcab.nroParesEstacoes, sizeof(int), 1, bin);
-    fclose(bin);
-    return regcab;
+    fread(status, sizeof(char), 1, bin);
+    fread(topo, sizeof(int), 1, bin);
+    fread(proxRRN, sizeof(int), 1, bin);
+    fread(nroEstacoes, sizeof(int), 1, bin);
+    fread(nroParesEstacoes, sizeof(int), 1, bin);
 }
 
 /* Dado o arquivo binário, precisa atualizar os valores no cabeçalho*/
