@@ -70,6 +70,12 @@ int *codLinhaIntegra, int *codEstIntegra, int *tamNomeEstacao, char **nomeEstaca
     fread(*nomeEstacao, sizeof(char), *tamNomeEstacao, ponteiro_arquivo);
     fread(tamNomeLinha, sizeof(int), 1, ponteiro_arquivo);
     fread(*nomeLinha, sizeof(char), *tamNomeLinha, ponteiro_arquivo);
+    bytes_escritos = 37 + *tamNomeEstacao + *tamNomeLinha;
+    char lixo = "$";
+    while (bytes_escritos < 80) {
+        fread(&lixo, sizeof(char), 1, ponteiro_arquivo);
+        bytes_escritos++;
+    }
 }
 
 void escreve_regdados(FILE* ponteiro_arquivo, char *removido,int *proximo, int *codEstacao, int *codLinha, int *codProxEstacao,int *distProxEstacao, 
@@ -90,6 +96,12 @@ int *codLinhaIntegra, int *codEstIntegra, int *tamNomeEstacao, char **nomeEstaca
     fwrite(*nomeEstacao, sizeof(char), *tamNomeEstacao, ponteiro_arquivo);
     fwrite(tamNomeLinha, sizeof(int), 1, ponteiro_arquivo);
     fwrite(*nomeLinha, sizeof(char), *tamNomeLinha, ponteiro_arquivo);
+    bytes_escritos = 37 + *tamNomeEstacao + *tamNomeLinha;
+    char lixo = "$";
+    while (bytes_escritos < 80) {
+        fwrite(&lixo, sizeof(char), 1, ponteiro_arquivo);
+        bytes_escritos++;
+    }
 }
 
 
