@@ -5,23 +5,23 @@
 #define TAM_CABECALHO 17
 
 FILE* ler_binario(char *arqbin);
-FILE * escrever_binario(char *arqbin);
+FILE* escrever_binario(char *arqbin);
 
-void ler_cabecalho(char *arqbin,
+void ler_cabecalho(FILE* ponteiro_arquivo, char *arqbin,
                    char *status,
                    int *topo,
                    int *proxRRN,
                    int *nroEstacoes,
                    int *nroParesEstacoes);
 
-void escreve_cabecalho(char *arqbin,
+void escreve_cabecalho(FILE* ponteiro_arquivo, char *arqbin,
                        char status,
                        int topo,
                        int proxRRN,
                        int nroEstacoes,
                        int nroParesEstacoes);
 
-void ler_regdados(char *arqbin, int byteoffset,
+void ler_regdados(FILE* ponteiro_arquivo, char *arqbin, int byteoffset,
                   char *removido,
                   int *proximo,
                   int *codEstacao,
@@ -35,7 +35,7 @@ void ler_regdados(char *arqbin, int byteoffset,
                   int *tamNomeLinha,
                   char **nomeLinha);
 
-void escreve_regdados(char *arqbin, int byteoffset,
+void escreve_regdados(FILE* ponteiro_arquivo, char *arqbin, int byteoffset,
                       char removido,
                       int proximo,
                       int codEstacao,
