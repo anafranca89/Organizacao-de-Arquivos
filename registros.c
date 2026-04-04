@@ -52,7 +52,7 @@ void escreve_cabecalho(FILE* ponteiro_arquivo, char *status, int *topo, int *pro
 /*Leitura e Escrita de Registros. 
 Dado o arquivo binário, retorna as informções naquele registro
 ATENÇÃO */
-void ler_regdados(FILE* ponteiro_arquivo, int byteoffset, char *removido,int *proximo, int *codEstacao, int *codLinha, int *codProxEstacao,int *distProxEstacao, 
+void ler_regdados(FILE* ponteiro_arquivo, char *removido,int *proximo, int *codEstacao, int *codLinha, int *codProxEstacao,int *distProxEstacao, 
 int *codLinhaIntegra, int *codEstIntegra, int *tamNomeEstacao, char **nomeEstacao, int *tamNomeLinha, char **nomeLinha){
     if (ponteiro_arquivo == NULL) {
         printf("Falha no processamento do arquivo.\n"); 
@@ -67,12 +67,12 @@ int *codLinhaIntegra, int *codEstIntegra, int *tamNomeEstacao, char **nomeEstaca
     fread(codLinhaIntegra, sizeof(int), 1, ponteiro_arquivo);
     fread(codEstIntegra, sizeof(int), 1, ponteiro_arquivo);
     fread(tamNomeEstacao, sizeof(int), 1, ponteiro_arquivo);
-    fread(*nomeEstacao, sizeof(char), tamNomeEstacao, ponteiro_arquivo);
+    fread(*nomeEstacao, sizeof(char), *tamNomeEstacao, ponteiro_arquivo);
     fread(tamNomeLinha, sizeof(int), 1, ponteiro_arquivo);
-    fread(*nomeLinha, sizeof(char), tamNomeLinha, ponteiro_arquivo);
+    fread(*nomeLinha, sizeof(char), *tamNomeLinha, ponteiro_arquivo);
 }
 
-void escreve_regdados(FILE* ponteiro_arquivo, int byteoffset, char *removido,int *proximo, int *codEstacao, int *codLinha, int *codProxEstacao,int *distProxEstacao, 
+void escreve_regdados(FILE* ponteiro_arquivo, char *removido,int *proximo, int *codEstacao, int *codLinha, int *codProxEstacao,int *distProxEstacao, 
 int *codLinhaIntegra, int *codEstIntegra, int *tamNomeEstacao, char **nomeEstacao, int *tamNomeLinha, char **nomeLinha){
     if (ponteiro_arquivo == NULL) {
         printf("Falha no processamento do arquivo.\n"); 
@@ -87,9 +87,9 @@ int *codLinhaIntegra, int *codEstIntegra, int *tamNomeEstacao, char **nomeEstaca
     fwrite(codLinhaIntegra, sizeof(int), 1, ponteiro_arquivo);
     fwrite(codEstIntegra, sizeof(int), 1, ponteiro_arquivo);
     fwrite(tamNomeEstacao, sizeof(int), 1, ponteiro_arquivo);
-    fwrite(*nomeEstacao, sizeof(char), tamNomeEstacao, ponteiro_arquivo);
+    fwrite(*nomeEstacao, sizeof(char), *tamNomeEstacao, ponteiro_arquivo);
     fwrite(tamNomeLinha, sizeof(int), 1, ponteiro_arquivo);
-    fwrite(*nomeLinha, sizeof(char), tamNomeLinha, ponteiro_arquivo);
+    fwrite(*nomeLinha, sizeof(char), *tamNomeLinha, ponteiro_arquivo);
 }
 
 
