@@ -21,7 +21,7 @@ FILE * escrever_binario(char *arqbin){
 
 
 /*Dado um arquivo binário, a função precisa ler o registro de cabeçalho */
-cabecalho ler_cabecalho(char * arqbin){
+void ler_cabecalho(char * arqbin){
     cabecalho regcab;
     FILE *bin = ler_binario(arqbin);
     fread(&regcab.status, sizeof(char), 1, bin);
