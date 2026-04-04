@@ -20,16 +20,16 @@ FILE * escrever_binario(char *arqbin){
 }
 
 
-/*Dado um arquivo binário e parâmentros
-ATENÇÃO: ponteiros deve estar bem posi
+/*Lê os dados do cabeçalho e colaca nas variáveis dadas
+ATENÇÃO: ponteiros deve estar bem posicionado no começo do cabeçalho, senão dá erro
 */
-void ler_cabecalho(FILE* ponteiro_arquivo, char *arqbin, char *status, int *topo, int *proxRRN, int *nroEstacoes, int *nroParesEstacoes){
-    FILE *bin = ler_binario(arqbin);
-    fread(status, sizeof(char), 1, bin);
-    fread(topo, sizeof(int), 1, bin);
-    fread(proxRRN, sizeof(int), 1, bin);
-    fread(nroEstacoes, sizeof(int), 1, bin);
-    fread(nroParesEstacoes, sizeof(int), 1, bin);
+void ler_cabecalho(FILE* ponteiro_arquivo, char *status, int *topo, int *proxRRN, int *nroEstacoes, int *nroParesEstacoes){
+    if (ponteiro_arquivo == NULL) printf("Falha no processamento do arquivo.");
+    fread(status, sizeof(char), 1, ponteiro_arquivo);
+    fread(topo, sizeof(int), 1, ponteiro_arquivo);
+    fread(proxRRN, sizeof(int), 1, ponteiro_arquivo);
+    fread(nroEstacoes, sizeof(int), 1, ponteiro_arquivo);
+    fread(nroParesEstacoes, sizeof(int), 1, ponteiro_arquivo);
 }
 
 /* Dado o arquivo binário, precisa atualizar os valores no cabeçalho*/
