@@ -58,18 +58,18 @@ int *codLinhaIntegra, int *codEstIntegra, int *tamNomeEstacao, char **nomeEstaca
         printf("Falha no processamento do arquivo.\n"); 
         return;
     }
-    fread(&registro.removido, sizeof(char), 1, ponteiro_arquivo);
-    fread(&registro.proximo, sizeof(int), 1, ponteiro_arquivo);
-    fread(&registro.codEstacao, sizeof(int), 1, ponteiro_arquivo);
-    fread(&registro.codLinha, sizeof(int), 1, ponteiro_arquivo);
-    fread(&registro.codProxEstacao, sizeof(int), 1, ponteiro_arquivo);
-    fread(&registro.distProxEstacao, sizeof(int), 1, ponteiro_arquivo);
-    fread(&registro.codLinhaIntegra, sizeof(int), 1, ponteiro_arquivo);
-    fread(&registro.codEstIntegra, sizeof(int), 1, ponteiro_arquivo);
-    fread(&registro.tamNomeEstacao, sizeof(int), 1, ponteiro_arquivo);
-    fread(registro.nomeEstacao, sizeof(char), registro.tamNomeEstacao, ponteiro_arquivo);
-    fread(&registro.tamNomeLinha, sizeof(int), 1, ponteiro_arquivo);
-    fread(registro.nomeLinha, sizeof(char), registro.tamNomeLinha, ponteiro_arquivo);
+    fread(removido, sizeof(char), 1, ponteiro_arquivo);
+    fread(proximo, sizeof(int), 1, ponteiro_arquivo);
+    fread(codEstacao, sizeof(int), 1, ponteiro_arquivo);
+    fread(codLinha, sizeof(int), 1, ponteiro_arquivo);
+    fread(codProxEstacao, sizeof(int), 1, ponteiro_arquivo);
+    fread(distProxEstacao, sizeof(int), 1, ponteiro_arquivo);
+    fread(codLinhaIntegra, sizeof(int), 1, ponteiro_arquivo);
+    fread(codEstIntegra, sizeof(int), 1, ponteiro_arquivo);
+    fread(tamNomeEstacao, sizeof(int), 1, ponteiro_arquivo);
+    fread(*nomeEstacao, sizeof(char), tamNomeEstacao, ponteiro_arquivo);
+    fread(tamNomeLinha, sizeof(int), 1, ponteiro_arquivo);
+    fread(*nomeLinha, sizeof(char), tamNomeLinha, ponteiro_arquivo);
 }
 
 void escreve_regdados(FILE* ponteiro_arquivo, int byteoffset, char *removido,int *proximo, int *codEstacao, int *codLinha, int *codProxEstacao,int *distProxEstacao, 
@@ -78,7 +78,6 @@ int *codLinhaIntegra, int *codEstIntegra, int *tamNomeEstacao, char **nomeEstaca
         printf("Falha no processamento do arquivo.\n"); 
         return;
     }
-    fseek(bin, byteoffset, SEEK_SET);
     fwrite(removido, sizeof(char), 1, ponteiro_arquivo);
     fwrite(proximo, sizeof(int), 1, ponteiro_arquivo);
     fwrite(codEstacao, sizeof(int), 1, ponteiro_arquivo);
@@ -88,9 +87,9 @@ int *codLinhaIntegra, int *codEstIntegra, int *tamNomeEstacao, char **nomeEstaca
     fwrite(codLinhaIntegra, sizeof(int), 1, ponteiro_arquivo);
     fwrite(codEstIntegra, sizeof(int), 1, ponteiro_arquivo);
     fwrite(tamNomeEstacao, sizeof(int), 1, ponteiro_arquivo);
-    fwrite(nomeEstacao, sizeof(char), registro.tamNomeEstacao, ponteiro_arquivo);
-    fwrite(tamNomeLinha, sizeof(int), 1, ponterio_arquivo);
-    fwrite(nomeLinha, sizeof(char), registro.tamNomeLinha, ponteiro_arquivo);
+    fwrite(*nomeEstacao, sizeof(char), tamNomeEstacao, ponteiro_arquivo);
+    fwrite(tamNomeLinha, sizeof(int), 1, ponteiro_arquivo);
+    fwrite(*nomeLinha, sizeof(char), tamNomeLinha, ponteiro_arquivo);
 }
 
 
