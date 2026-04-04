@@ -20,11 +20,14 @@ FILE * escrever_binario(char *arqbin){
 }
 
 
-/*Lê os dados do cabeçalho e colaca nas variáveis dadas
+/*Lê os dados do cabeçalho e coloca nas variáveis dadas
 ATENÇÃO: ponteiros deve estar bem posicionado no começo do cabeçalho, senão dá erro
 */
 void ler_cabecalho(FILE* ponteiro_arquivo, char *status, int *topo, int *proxRRN, int *nroEstacoes, int *nroParesEstacoes){
-    if (ponteiro_arquivo == NULL) printf("Falha no processamento do arquivo.");
+    if (ponteiro_arquivo == NULL) {
+        printf("Falha no processamento do arquivo.\n"); 
+        return;
+    }
     fread(status, sizeof(char), 1, ponteiro_arquivo);
     fread(topo, sizeof(int), 1, ponteiro_arquivo);
     fread(proxRRN, sizeof(int), 1, ponteiro_arquivo);
@@ -32,16 +35,18 @@ void ler_cabecalho(FILE* ponteiro_arquivo, char *status, int *topo, int *proxRRN
     fread(nroParesEstacoes, sizeof(int), 1, ponteiro_arquivo);
 }
 
-/* Dado o arquivo binário, precisa atualizar os valores no cabeçalho*/
-void escreve_cabecalho(char *arqbin, cabecalho regcab){
-    FILE *bin = escrever_binario(arqbin);
-    fseek(bin, 0, SEEK_SET);
-    fwrite(&regcab.status, sizeof(char), 1, bin);
-    fwrite(&regcab.topo, sizeof(int), 1, bin);
-    fwrite(&regcab.proxRRN, sizeof(int), 1, bin);
-    fwrite(&regcab.nroEstacoes, sizeof(int), 1, bin);
-    fwrite(&regcab.nroParesEstacoes, sizeof(int), 1, bin);
-    fclose(bin);
+/* Dado o arquivo binário, atualiza os valores no cabeçalho
+ATENÇÃO: ponteiros deve estar bem posicionado no começo do cabeçalho, senão dá erro*/
+void escreve_cabecalho(FILE* ponteiro_arquivo, char *status, int *topo, int *proxRRN, int *nroEstacoes, int *nroParesEstacoes){
+    if (ponteiro_arquivo == NULL) {
+        printf("Falha no processamento do arquivo.\n"); 
+        return;
+    }
+    fwrite(status, sizeof(char), 1, ponteiro_arquivo);
+    fwrite(topo, sizeof(int), 1, ponteiro_arquivo);
+    fwrite(proxRRN, sizeof(int), 1, ponteiro_arquivo);
+    fwrite(nroEstacoes, sizeof(int), 1, ponteiro_arquivo);
+    fwrite(nroParesEstacoes, sizeof(int), 1, ponteiro_arquivo);
 }
 
 /*Leitura e Escrita de Registros. 
