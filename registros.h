@@ -11,7 +11,7 @@ FILE* escrever_binario(char *arqbin);
 
 void ler_cabecalho(FILE* ponteiro_arquivo, char *status, int *topo, int *proxRRN, int *nroEstacoes, int *nroParesEstacoes);
 
-void escreve_cabecalho(FILE* ponteiro_arquivo, char status, int topo, int proxRRN, int nroEstacoes, int nroParesEstacoes);
+void escreve_cabecalho(FILE* ponteiro_arquivo, char *status, int *topo, int *proxRRN, int *nroEstacoes, int *nroParesEstacoes);
 
 void ler_regdados(FILE* ponteiro_arquivo, 
                   char *removido,
@@ -23,22 +23,22 @@ void ler_regdados(FILE* ponteiro_arquivo,
                   int *codLinhaIntegra,
                   int *codEstIntegra,
                   int *tamNomeEstacao,
-                  char **nomeEstacao,
+                  char *nomeEstacao,
                   int *tamNomeLinha,
-                  char **nomeLinha);
+                  char *nomeLinha);
 
 void escreve_regdados(FILE* ponteiro_arquivo, 
-                      char removido,
-                      int proximo,
-                      int codEstacao,
-                      int codLinha,
-                      int codProxEstacao,
-                      int distProxEstacao,
-                      int codLinhaIntegra,
-                      int codEstIntegra,
-                      int tamNomeEstacao,
+                      char *removido,
+                      int *proximo,
+                      int *codEstacao,
+                      int *codLinha,
+                      int *codProxEstacao,
+                      int *distProxEstacao,
+                      int *codLinhaIntegra,
+                      int *codEstIntegra,
+                      int *tamNomeEstacao,
                       char *nomeEstacao,
-                      int tamNomeLinha,
+                      int *tamNomeLinha,
                       char *nomeLinha);
 
 
