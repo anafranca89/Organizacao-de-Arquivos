@@ -1,339 +1,366 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "registros.c"
+#include "registros.h"
+#include "fornecidas.h"
+#include "funcoes.h"
 
+int hash_string(char *str, int tam, int primo) {
+    int soma = 0;
 
-// faz a busca no arquivo .csv de acordo com o codigo primeiro campo
-void busca_codigo(int CodEstacao, FILE* ponteiro_arquivo) {
-
-    if (ponteiro_arquivo == NULL) {
-        // seguindo as especificações, essa eh a mensagem caso der algum erro
-        printf("Falha no processamento do arquivo.");
-        return;
+    for (int i = 0; i < tam; i++) {
+        soma += (unsigned char) str[i];
     }
 
-    char registro[MAX_TAM_REG];
-    int encontrado = 0;
+    return soma % primo;
+}
 
-    // guarda a posição atual do ponteiro
-    long posicao_inicial = ftell(ponteiro_arquivo);
+void liberar_tabela(NoHash *tabela[]) {
+    for (int i = 0; i < TAM_TABELA; i++) {
+        NoHash *atual = tabela[i];
 
-    // se o arquivo estiver no começo, pula o cabeçalho
-    if (posicao_inicial == 0) {
-        if (fgets(registro, MAX_TAM_CABECALHO, ponteiro_arquivo) == NULL) {
-            printf("Falha no processamento do arquivo.");
-            return;
-        }
-        posicao_inicial = ftell(ponteiro_arquivo);
-    }
-
-    // primeiro busca da posição atual até o final do arquivo
-    while (fgets(registro, MAX_TAM_REG, ponteiro_arquivo) != NULL) {
-
-        registro[strcspn(registro, "\n")] = '\0';
-
-        char registro_original[MAX_TAM_REG];
-        strcpy(registro_original, registro);
-
-        char *token = strtok(registro, ",");
-        int codEstacao_lido = (token != NULL) ? atoi(token) : -1;
-
-        if (codEstacao_lido == CodEstacao) {
-            printf("%s\n", registro_original);
-            encontrado = 1;
-        }
-    }
-
-    // depois se nao encontrou, volta ao início e busca até a posição inicial
-    if (!encontrado) {
-        fseek(ponteiro_arquivo, 0, SEEK_SET);
-        clearerr(ponteiro_arquivo);
-        // pula cabeçalho
-        if (fgets(registro, MAX_TAM_REG, ponteiro_arquivo) == NULL) {
-            printf("Falha no processamento do arquivo.");
-            return;
+        while (atual != NULL) {
+            NoHash *temp = atual;
+            atual = atual->prox;
+            free(temp);
         }
 
-        while (ftell(ponteiro_arquivo) < posicao_inicial &&
-               fgets(registro, MAX_TAM_REG, ponteiro_arquivo) != NULL) {
-
-            registro[strcspn(registro, "\n")] = '\0';
-
-            char registro_original[MAX_TAM_REG];
-            strcpy(registro_original, registro);
-
-            char *token = strtok(registro, ",");
-            int codEstacao_lido = (token != NULL) ? atoi(token) : -1;
-
-            if (codEstacao_lido == CodEstacao) {
-                printf("%s\n", registro_original);
-                encontrado = 1;
-            }
-        }
-    }
-
-    if (!encontrado) {
-        printf("COD %d nao encontrado.\n", CodEstacao);
+        tabela[i] = NULL;
     }
 }
 
-/*
-    busca um registro de acordo com o campo
-    a mascara é simplesmente os campos que queremos buscar, por exemplo, caso queremos 
-    buscar o codigo e nome, colocamos a mascara 11000000
-    o unsigned char eh pq tem tamanho de exatamente um byte
-*/
+void inicializar_tabela(NoHash *tabela[]) {
+    for (int i = 0; i < TAM_TABELA; i++) {
+        tabela[i] = NULL;
+    }
+}
 
-void busca_mascara(FILE *ponteiro_arquivo, unsigned char mascara, char valores[8][25]) {
-    if (ponteiro_arquivo == NULL) {
+void inserir_hash(NoHash *tabela[], char *nomeLinha, int tamNomeLinha) {
+    int pos = hash_string(nomeLinha, tamNomeLinha, TAM_TABELA);
+    NoHash *atual = tabela[pos];
+
+    while (atual != NULL) {
+        if ((int)strlen(atual->nomeLinha) == tamNomeLinha &&
+            strncmp(atual->nomeLinha, nomeLinha, tamNomeLinha) == 0) {
+            atual->repeticoes++;
+            return;
+        }
+        atual = atual->prox;
+    }
+
+    NoHash *novo = (NoHash *) malloc(sizeof(NoHash));
+    memcpy(novo->nomeLinha, nomeLinha, tamNomeLinha);
+    novo->nomeLinha[tamNomeLinha] = '\0';
+    novo->repeticoes = 1;
+    novo->prox = tabela[pos];
+
+    tabela[pos] = novo;
+}
+
+NoHash* buscar_hash(NoHash *tabela[], char *nomeLinha, int tamNomeLinha) {
+    int pos = hash_string(nomeLinha, tamNomeLinha, TAM_TABELA);
+    NoHash *atual = tabela[pos];
+
+    while (atual != NULL) {
+        if ((int)strlen(atual->nomeLinha) == tamNomeLinha &&
+            strncmp(atual->nomeLinha, nomeLinha, tamNomeLinha) == 0) {
+            return atual;
+        }
+        atual = atual->prox;
+    }
+
+    return NULL;
+}
+
+int ler_registro_csv(FILE *csv,
+                     int *codEstacao,
+                     char *nomeEstacao,
+                     int *tamNomeEstacao,
+                     int *codLinha,
+                     char *nomeLinha,
+                     int *tamNomeLinha,
+                     int *codProxEstacao,
+                     int *distProxEstacao,
+                     int *codLinhaIntegra,
+                     int *codEstIntegra) {
+    char linha[MAX_LINHA_CSV];
+    char *p;
+    int valor, tem_digito, i;
+
+    if (csv == NULL) return 0;
+    if (fgets(linha, MAX_LINHA_CSV, csv) == NULL) return 0;
+
+    p = linha;
+
+    valor = 0; tem_digito = 0;
+    while (*p != ',' && *p != '\0' && *p != '\n' && *p != '\r') {
+        valor = valor * 10 + (*p - '0');
+        tem_digito = 1;
+        p++;
+    }
+    *codEstacao = tem_digito ? valor : -1;
+    if (*p == ',') p++;
+
+    i = 0;
+    while (*p != ',' && *p != '\0' && *p != '\n' && *p != '\r') {
+        nomeEstacao[i++] = *p;
+        p++;
+    }
+    *tamNomeEstacao = i;
+    if (*p == ',') p++;
+
+    valor = 0; tem_digito = 0;
+    while (*p != ',' && *p != '\0' && *p != '\n' && *p != '\r') {
+        valor = valor * 10 + (*p - '0');
+        tem_digito = 1;
+        p++;
+    }
+    *codLinha = tem_digito ? valor : -1;
+    if (*p == ',') p++;
+
+    i = 0;
+    while (*p != ',' && *p != '\0' && *p != '\n' && *p != '\r') {
+        nomeLinha[i++] = *p;
+        p++;
+    }
+    *tamNomeLinha = i;
+    if (*p == ',') p++;
+
+    valor = 0; tem_digito = 0;
+    while (*p != ',' && *p != '\0' && *p != '\n' && *p != '\r') {
+        valor = valor * 10 + (*p - '0');
+        tem_digito = 1;
+        p++;
+    }
+    *codProxEstacao = tem_digito ? valor : -1;
+    if (*p == ',') p++;
+
+    valor = 0; tem_digito = 0;
+    while (*p != ',' && *p != '\0' && *p != '\n' && *p != '\r') {
+        valor = valor * 10 + (*p - '0');
+        tem_digito = 1;
+        p++;
+    }
+    *distProxEstacao = tem_digito ? valor : -1;
+    if (*p == ',') p++;
+
+    valor = 0; tem_digito = 0;
+    while (*p != ',' && *p != '\0' && *p != '\n' && *p != '\r') {
+        valor = valor * 10 + (*p - '0');
+        tem_digito = 1;
+        p++;
+    }
+    *codLinhaIntegra = tem_digito ? valor : -1;
+    if (*p == ',') p++;
+
+    valor = 0; tem_digito = 0;
+    while (*p != ',' && *p != '\0' && *p != '\n' && *p != '\r') {
+        valor = valor * 10 + (*p - '0');
+        tem_digito = 1;
+        p++;
+    }
+    *codEstIntegra = tem_digito ? valor : -1;
+    return 1;
+}
+
+void adicionar_csv_no_binario(FILE *csv, FILE *bin, NoHash *tabela[]) {
+    char linha_cabecalho[MAX_LINHA_CSV];
+
+    char status;
+    int topo, proxRRN, nroEstacoes, nroParesEstacoes;
+
+    char removido;
+    int proximo;
+    int codEstacao, tamNomeEstacao;
+    int codLinha, tamNomeLinha;
+    int codProxEstacao, distProxEstacao;
+    int codLinhaIntegra, codEstIntegra;
+
+    char nomeEstacao[200];
+    char nomeLinha[200];
+
+    int rrn_atual;
+    long byteoffset;
+    int debug_count = 0;
+    int i;
+
+    if (csv == NULL || bin == NULL) {
         printf("Falha no processamento do arquivo.\n");
         return;
     }
 
-    char linha[MAX_TAM_REG];
-    int encontrados = 0;
+    fseek(bin, 0, SEEK_SET);
+    ler_cabecalho(bin, &status, &topo, &proxRRN, &nroEstacoes, &nroParesEstacoes);
 
-    long posicao_inicial = ftell(ponteiro_arquivo);
+    if (status != '0' && status != '1') {
+        status = '0';
+        topo = -1;
+        proxRRN = 0;
+        nroEstacoes = 0;
+        nroParesEstacoes = 0;
 
-    // se começou no início do arquivo, pula o cabeçalho
-    if (posicao_inicial == 0) {
-        if (fgets(linha, MAX_TAM_REG, ponteiro_arquivo) == NULL) {
-            printf("Falha no processamento do arquivo.\n");
-            return;
-        }
-        posicao_inicial = ftell(ponteiro_arquivo);
+        fseek(bin, 0, SEEK_SET);
+        escreve_cabecalho(bin, &status, &topo, &proxRRN, &nroEstacoes, &nroParesEstacoes);
     }
 
-    // primeiro buscamos da posição atual até o final
-    while (fgets(linha, MAX_TAM_REG, ponteiro_arquivo) != NULL) {
-        linha[strcspn(linha, "\n")] = '\0';
-
-        char linha_original[MAX_TAM_REG];
-        strcpy(linha_original, linha);
-
-        char *campos[8];
-        int i = 0;
-
-        char *token = strtok(linha, ",");
-        while (token != NULL && i < 8) {
-            campos[i++] = token;
-            token = strtok(NULL, ",");
-        }
-
-        while (i < 8) {
-            campos[i++] = "";
-        }
-
-        int ok = 1;
-
-        for (int j = 0; j < 8; j++) {
-            if (mascara & (1 << j)) {
-                if (strcmp(campos[j], valores[j]) != 0) {
-                    ok = 0;
-                    break;
-                }
-            }
-        }
-
-        if (ok) {
-            printf("%s\n", linha_original);
-            encontrados++;
-        }
-    }
-
-    // chegou no final, entao limpa EOF e volta ao início
-    clearerr(ponteiro_arquivo);
-    fseek(ponteiro_arquivo, 0, SEEK_SET);
-
-    // pula cabeçalho
-    if (fgets(linha, MAX_TAM_REG, ponteiro_arquivo) == NULL) {
-        printf("Falha no processamento do arquivo.");
+    if (fgets(linha_cabecalho, MAX_LINHA_CSV, csv) == NULL) {
+        printf("Falha no processamento do arquivo.\n");
         return;
-    } 
+    }
 
-    // depois busca do início até a posição inicial
-    while (ftell(ponteiro_arquivo) < posicao_inicial && fgets(linha, MAX_TAM_REG, ponteiro_arquivo) != NULL) {
-        linha[strcspn(linha, "\n")] = '\0';
+    rrn_atual = proxRRN;
+    byteoffset = TAM_CABECALHO + rrn_atual * TAM_REG;
 
-        char linha_original[MAX_TAM_REG];
-        strcpy(linha_original, linha);
+    fseek(bin, byteoffset, SEEK_SET);
 
-        char *campos[8];
-        int i = 0;
+    while (ler_registro_csv(csv,
+                            &codEstacao,
+                            nomeEstacao,
+                            &tamNomeEstacao,
+                            &codLinha,
+                            nomeLinha,
+                            &tamNomeLinha,
+                            &codProxEstacao,
+                            &distProxEstacao,
+                            &codLinhaIntegra,
+                            &codEstIntegra)) {
 
-        char *token = strtok(linha, ",");
-        while (token != NULL && i < 8) {
-            campos[i++] = token;
-            token = strtok(NULL, ",");
-        }
+        removido = '0';
+        proximo = -1;
 
-        while (i < 8) {
-            campos[i++] = "";
-        }
+        escreve_regdados(bin,
+                         &removido,
+                         &proximo,
+                         &codEstacao,
+                         &codLinha,
+                         &codProxEstacao,
+                         &distProxEstacao,
+                         &codLinhaIntegra,
+                         &codEstIntegra,
+                         &tamNomeEstacao,
+                         nomeEstacao,
+                         &tamNomeLinha,
+                         nomeLinha);
 
-        int ok = 1;
+        {
+            NoHash *busca = buscar_hash(tabela, nomeEstacao, tamNomeEstacao);
 
-        for (int j = 0; j < 8; j++) {
-            if (mascara & (1 << j)) {
-                if (strcmp(campos[j], valores[j]) != 0) {
-                    ok = 0;
-                    break;
-                }
+            if (busca == NULL) {
+                inserir_hash(tabela, nomeEstacao, tamNomeEstacao);
+                nroEstacoes++;
+            } else {
+                busca->repeticoes++;
             }
         }
 
-        if (ok) {
-            printf("%s\n", linha_original);
-            encontrados++;
+        if (codProxEstacao != -1) {
+            nroParesEstacoes++;
         }
-    }
 
-    if (encontrados == 0) {
-        printf("Nenhum registro encontrado.\n");
-    }
-}
-
-
-
-
-/* Função que dados o(S) campo(s) e valor(es), busca o registro q tem esse valor e retorna a lista de rrn 
-Se nenhum for encontrado, retorna lista vazia.
-file deve estar aberto para leitura.
-*/
-
-int* busca_registro(FILE* binario, int m){
-    char campos[m][20];
-    char valores[m][50];
-
-    for(int i=0; i<m; i++){  
-        //ler os m campo/valores que preciso buscar
-        scanf("%s %s", campos[i], valores[i]);
-    }
-    // pulando o cabecalho - comeca o reg.dados
-    fseek(binario, TAM_CABECALHO, SEEK_SET); 
-    
-    dados reg;
-    int rrn_atual = 0;
-    int num_rrns = 0;
-    int* rrns_encontrados = malloc(sizeof(int) * 100); // aloca espaço para até 100
-    // Percorre o arquivo até o fim
-    while (fread(&reg.removido, sizeof(char), 1, binario)) {
-        reg = ler_regdados(binario, rrn_atual * TAM_REG );
-
-        // Só verifica registros que NÃO foram removidos
-        if (reg.removido == '0') {
-            if (compara_registro(--)) {
-                
-                rrns_encontrados[num_rrns] = rrn_atual;
-                (num_rrns)++;
+        if (debug_count < 10) {
+            printf("REGISTRO %d\n", debug_count + 1);
+            printf("codEstacao = %d\n", codEstacao);
+            printf("nomeEstacao = ");
+            for (i = 0; i < tamNomeEstacao; i++) {
+                printf("%c", nomeEstacao[i]);
             }
+            printf("\n");
+            printf("-------------------------\n");
+            debug_count++;
         }
+
         rrn_atual++;
-    }
-    rrns_encontrados[num_rrns] = -1; // marca o fim da lista
-
-    return rrns_encontrados; // retorna a lista de RRN encontrados
-}
-
-
-
-
-
-
-
-/* Função para ler o arquivo binário, e remover lógicamente os registros de dados
-Delete from --- where*/
-
-void delete (char* binario, int n){
-    //chama função pra ler o arquivo binário.
-    cabecalho regcab = ler_cabecalho(binario);
-
-    for(int i=0; i<n; i++){
-        //ler os n reg a serem removidos
-        //m  nomeCampo1 valorCampo1 ... nomeCampom valorCampom
-        // ler a qtd m de campos a buscar
-        /*Usa uma função pra buscar os registros com esses campos.
-        Retorna o rrn dos registros encontrados.
-        */
-        int m;
-        scanf("%d", &m);
-        int* rrns_encontrados = busca_registro(binario, m); //retorna a lista de rrn encontrados
-        
-        for(int j=0; j<100; j++){
-            //se o registro é encontrado, 
-            if(   rrns_encontrados[j]  < regcab.proxRRN){
-                int byteoffset = rrns_encontrados[j] *80;
-                fseek(binario,  byteoffset, SEEK_SET);
-                dados registro = ler_regdados(binario, byteoffset);
-                if(registro.removido == '0'){
-                    /*registro encontrado e n está removido
-                    Então: marca como removido == 1; atualiza o topo e o proximo registro removido*/
-                    registro.removido = '1';
-                    registro.proximo = regcab.topo;
-                    regcab.topo = rrns_encontrados[j];
-                    escreve_cabecalho(binario, regcab);
-                    escreve_regdados(binario, registro, byteoffset);
-    
-                }
-            } else{
-                //registro nao encontrado
-                printf("Registro nao encontrado\n");
-            }
-        }
-    
+        byteoffset += TAM_REG;
     }
 
-    BinarionaTela(binario);
+    proxRRN = rrn_atual;
+    status = '1';
+
+    fseek(bin, 0, SEEK_SET);
+    escreve_cabecalho(bin, &status, &topo, &proxRRN, &nroEstacoes, &nroParesEstacoes);
 }
 
+void imprime_inteiro_ou_nulo(int valor){
+    if(valor == -1) printf("NULO");
+    else printf("%d", valor);
+}
 
+void imprime_texto_ou_nulo(char *texto, int tamanho){
+    if(tamanho == 0) printf("NULO");
+    else printf("%.*s", tamanho, texto);
+}
 
+void mostrar_binario_sequencial(FILE *bin){
+    char status;
+    int topo, proxRRN, nroEstacoes, nroParesEstacoes;
 
-/* Função Atualização UPDATE.
+    char removido;
+    int proximo;
+    int codEstacao, codLinha, codProxEstacao, distProxEstacao;
+    int codLinhaIntegra, codEstIntegra;
+    int tamNomeEstacao, tamNomeLinha;
 
-*/
+    char nomeEstacao[200];
+    char nomeLinha[200];
 
+    int i;
 
-void update (char* binario, int n){
-    //chama função pra ler o arquivo binário.
-    cabecalho regcab = ler_cabecalho(binario);
-
-    for(int i=0; i<n; i++){
-        int byteoffset;
-        //ler os n reg a serem atualizados
-        //m  nomeCampo1 valorCampo1 ... nomeCampom valorCampom
-        // ler a qtd m de campos a buscar
-        /*Usa uma função pra buscar os registros com esses campos.
-        Retorna o rrn dos registros encontrados.
-        */
-        int m;
-        scanf("%d", &m);
-        int* rrns_encontrados = busca_registro(binario, m); //retorna a lista de rrn encontrados
-       // ler o p nomecampo valor campo a ser atualizado.
-        int p;
-        scanf("%d", &p);
-        
-        for(int j=0; j<p; j++){
-            // ler os valores e campos que vao substituir
-        }
-        
-        //se o registro é encontrado, 
-        if(rrns_encontrados != NULL){
-            byteoffset = rrns_encontrados[k]*  TAM_REG;
-            fseek(binario,  byteoffset, SEEK_SET);
-            dados registro = ler_regdados(binario, byteoffset);
-            /*
-            reescreve os campos necessários
-            */
-            escreve_regdados(binario, registro, byteoffset);
-        } else{
-            // não foi encontrado um registro com aquela busca
-        }
-    BinarionaTela(binario);
-    
+    if(bin == NULL){
+        printf("Falha no processamento do arquivo.\n");
+        return;
     }
 
-    BinarionaTela(binario);
+    fseek(bin, 0, SEEK_SET);
+    ler_cabecalho(bin, &status, &topo, &proxRRN, &nroEstacoes, &nroParesEstacoes);
+    if (proxRRN == 0 || nroEstacoes == 0) {
+            printf("Registro inexistente.\n");
+    return;
 }
+    if(status != '1'){
+        printf("Falha no processamento do arquivo.\n");
+        return;
+    }
+
+    for(i = 0; i < proxRRN; i++){
+        ler_regdados(bin,
+                     &removido,
+                     &proximo,
+                     &codEstacao,
+                     &codLinha,
+                     &codProxEstacao,
+                     &distProxEstacao,
+                     &codLinhaIntegra,
+                     &codEstIntegra,
+                     &tamNomeEstacao,
+                     nomeEstacao,
+                     &tamNomeLinha,
+                     nomeLinha);
+
+        if(removido == '1') continue;
+        imprime_inteiro_ou_nulo(codEstacao);
+        printf(" ");
+
+        imprime_texto_ou_nulo(nomeEstacao, tamNomeEstacao);
+        printf(" ");
+
+        imprime_inteiro_ou_nulo(codLinha);
+        printf(" ");
+
+        imprime_texto_ou_nulo(nomeLinha, tamNomeLinha);
+        printf(" ");
+
+        imprime_inteiro_ou_nulo(codProxEstacao);
+        printf(" ");
+
+        imprime_inteiro_ou_nulo(distProxEstacao);
+        printf(" ");
+
+        imprime_inteiro_ou_nulo(codLinhaIntegra);
+        printf(" ");
+
+        imprime_inteiro_ou_nulo(codEstIntegra);
+        printf("\n");
+    }
+}
+
 
