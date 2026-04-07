@@ -58,6 +58,9 @@ int main() {
         }
     
     else if (operacao == 3) {
+        /*Operação de SELECT - WHERE 
+        Imprime todos os registros que têm os campos mencionados
+        */
         int n, i, j, m;
 
         scanf("%s", nome_bin);
@@ -70,15 +73,17 @@ int main() {
             return 0;
         }
 
+        // N é a quantidade de buscas a serem feitas
         scanf("%d", &n);
 
         for (i = 0; i < n; i++) {
             char nomesCampos[10][50];
             char valoresCampos[10][200];
-
+            // Para cada busca - m campos
             scanf("%d", &m);
 
             for (j = 0; j < m; j++) {
+                //Preciso adicionar uma verificação se é string ou nao
                 scanf("%s", nomesCampos[j]);
                 ScanQuoteString(valoresCampos[j]);
             }
