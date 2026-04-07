@@ -164,7 +164,7 @@ void imprime_texto_ou_nulo(char *texto, int tamanho){
 
 
 
-
+/*Função SELECT WHERE :  dados os campos e os valores procurados, imprimir os registros validos */
 void buscar_registros(FILE *bin, NoHash *tabela[], int m,
                       char nomesCampos[][50], char valoresCampos[][200]) {
     int i, rrn;
