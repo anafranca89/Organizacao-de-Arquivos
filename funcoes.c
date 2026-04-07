@@ -5,6 +5,7 @@
 #include "fornecidas.h"
 #include "funcoes.h"
 
+/*Função auxiliar: usando a estrutura criada, para saber se o arquivo já foi aberto anteriormente */
 int arquivo_ja_processado(ArquivoAberto *lista, char *nome_bin) {
     ArquivoAberto *atual = lista;
 
@@ -17,7 +18,7 @@ int arquivo_ja_processado(ArquivoAberto *lista, char *nome_bin) {
 
     return 0;
 }
-
+//Adiciona o nome do arquivo aberto na estrutura de arquivos abertos anteriormente
 void adicionar_arquivo_processado(ArquivoAberto **lista, char *nome_bin) {
     ArquivoAberto *novo = (ArquivoAberto *) malloc(sizeof(ArquivoAberto));
     strcpy(novo->nome, nome_bin);
@@ -25,6 +26,7 @@ void adicionar_arquivo_processado(ArquivoAberto **lista, char *nome_bin) {
     *lista = novo;
 }
 
+// Liberar a memoria da estrutura de arquivos utilizada
 void liberar_lista_arquivos(ArquivoAberto *lista) {
     ArquivoAberto *atual = lista;
 
@@ -34,7 +36,8 @@ void liberar_lista_arquivos(ArquivoAberto *lista) {
         free(temp);
     }
 }
-
+/*Estrutura escolhida para auxiliar na busca de string foi por tabela Hash. 
+Se o tamnaho das strings é >0 insere na tabela hash.*/
 void carregar_nomes_no_hash(FILE *bin, NoHash *tabela[]) {
     char status;
     int topo, proxRRN, nroEstacoes, nroParesEstacoes;
@@ -72,6 +75,7 @@ void carregar_nomes_no_hash(FILE *bin, NoHash *tabela[]) {
     fseek(bin, 0, SEEK_SET);
 }
 
+// Formula para criação da chave hash 
 int hash_string(char *str, int tam, int primo) {
     int soma = 0;
 
@@ -95,7 +99,7 @@ void liberar_tabela(NoHash *tabela[]) {
         tabela[i] = NULL;
     }
 }
-
+//Inicialização da tabela Hash
 void inicializar_tabela(NoHash *tabela[]) {
     for (int i = 0; i < TAM_TABELA; i++) {
         tabela[i] = NULL;
