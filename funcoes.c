@@ -29,6 +29,7 @@ void liberar_tabela(NoHash *tabela[]) {
     }
 }
 
+//-----------------
 void inicializar_tabela(NoHash *tabela[]) {
     for (int i = 0; i < TAM_TABELA; i++) {
         tabela[i] = NULL;
@@ -223,7 +224,8 @@ void adicionar_csv_no_binario(FILE *csv, FILE *bin, NoHash *tabela[]) {
                             &codProxEstacao,
                             &distProxEstacao,
                             &codLinhaIntegra,
-                            &codEstIntegra)) {
+                            &codEstIntegra))
+        {
 
         removido = '0';
         proximo = -1;
