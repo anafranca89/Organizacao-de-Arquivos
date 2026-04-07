@@ -1,23 +1,6 @@
 #include <stdio.h>
 #include "registros.h"
 
-/*Funções para o ARQUIVO BINÁRIO DE SAÍDA. Retornam o ponteiro de arquivo  fopen!*/
-FILE * ler_binario(char *arqbin){
-    FILE *file = fopen(arqbin, "rb");
-    if(file == NULL){
-        return NULL;
-    }
-    return file;
-}
-
-FILE * escrever_binario(char *arqbin){
-    FILE *file = fopen(arqbin, "r+b");
-    if(file == NULL){
-        return NULL;
-    }
-    return file;
-
-}
 
 
 /*Lê os dados do cabeçalho e coloca nas variáveis dadas
