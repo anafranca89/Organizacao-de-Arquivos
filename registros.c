@@ -50,7 +50,7 @@ void escreve_cabecalho(FILE* ponteiro_arquivo, char *status, int *topo, int *pro
 }
 
 /*Leitura e Escrita de Registros. 
-Dado o arquivo binário, retorna as informções naquele registro
+Dado o arquivo binário, retorna as informações naquele registro nas variáveis dadas como parâmetro.
 ATENÇÃO */
 void ler_regdados(FILE* ponteiro_arquivo, char *removido,int *proximo, int *codEstacao, int *codLinha, int *codProxEstacao,int *distProxEstacao, 
 int *codLinhaIntegra, int *codEstIntegra, int *tamNomeEstacao, char *nomeEstacao, int *tamNomeLinha, char *nomeLinha){
@@ -72,11 +72,13 @@ int *codLinhaIntegra, int *codEstIntegra, int *tamNomeEstacao, char *nomeEstacao
     fread(nomeLinha, sizeof(char), *tamNomeLinha, ponteiro_arquivo);
     int bytes_escritos = 37 + *tamNomeEstacao + *tamNomeLinha;
     char lixo = '$';
+  
     while (bytes_escritos < 80) {
         fread(&lixo, sizeof(char), 1, ponteiro_arquivo);
         bytes_escritos++;
     }
 }
+
 
 void escreve_regdados(FILE* ponteiro_arquivo, char *removido,int *proximo, int *codEstacao, int *codLinha, int *codProxEstacao,int *distProxEstacao, 
 int *codLinhaIntegra, int *codEstIntegra, int *tamNomeEstacao, char *nomeEstacao, int *tamNomeLinha, char *nomeLinha){
@@ -97,7 +99,10 @@ int *codLinhaIntegra, int *codEstIntegra, int *tamNomeEstacao, char *nomeEstacao
     fwrite(tamNomeLinha, sizeof(int), 1, ponteiro_arquivo);
     fwrite(nomeLinha, sizeof(char), *tamNomeLinha, ponteiro_arquivo);
     int bytes_escritos = 37 + *tamNomeEstacao + *tamNomeLinha;
+    
     char lixo = '$';
+    //O registro deve sempre ter 80 bytes. Preenche o espaço faltante com caracteres lixo
+    
     while (bytes_escritos < 80) {
         fwrite(&lixo, sizeof(char), 1, ponteiro_arquivo);
         bytes_escritos++;
