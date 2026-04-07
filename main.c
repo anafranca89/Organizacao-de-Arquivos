@@ -83,7 +83,8 @@ int main() {
             scanf("%d", &m);
 
             for (j = 0; j < m; j++) {
-                //Preciso adicionar uma verificação se é string ou nao
+                //ler o nome do campo procurado - o valor do campo pode estar entre aspas ou nao
+                //a função ScanQuoteString cuida disso
                 scanf("%s", nomesCampos[j]);
                 ScanQuoteString(valoresCampos[j]);
             }
