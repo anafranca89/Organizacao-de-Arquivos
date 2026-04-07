@@ -5,6 +5,73 @@
 #include "fornecidas.h"
 #include "funcoes.h"
 
+int arquivo_ja_processado(ArquivoAberto *lista, char *nome_bin) {
+    ArquivoAberto *atual = lista;
+
+    while (atual != NULL) {
+        if (strcmp(atual->nome, nome_bin) == 0) {
+            return 1;
+        }
+        atual = atual->prox;
+    }
+
+    return 0;
+}
+
+void adicionar_arquivo_processado(ArquivoAberto **lista, char *nome_bin) {
+    ArquivoAberto *novo = (ArquivoAberto *) malloc(sizeof(ArquivoAberto));
+    strcpy(novo->nome, nome_bin);
+    novo->prox = *lista;
+    *lista = novo;
+}
+
+void liberar_lista_arquivos(ArquivoAberto *lista) {
+    ArquivoAberto *atual = lista;
+
+    while (atual != NULL) {
+        ArquivoAberto *temp = atual;
+        atual = atual->prox;
+        free(temp);
+    }
+}
+
+void carregar_nomes_no_hash(FILE *bin, NoHash *tabela[]) {
+    char status;
+    int topo, proxRRN, nroEstacoes, nroParesEstacoes;
+
+    char removido;
+    int proximo;
+    int codEstacao, codLinha, codProxEstacao, distProxEstacao;
+    int codLinhaIntegra, codEstIntegra;
+    int tamNomeEstacao, tamNomeLinha;
+    char nomeEstacao[200];
+    char nomeLinha[200];
+
+    int rrn;
+
+    if (bin == NULL) {
+        return;
+    }
+
+    fseek(bin, 0, SEEK_SET);
+    ler_cabecalho(bin, &status, &topo, &proxRRN, &nroEstacoes, &nroParesEstacoes);
+
+    for (rrn = 0; rrn < proxRRN; rrn++) {
+        ler_regdados(bin, &removido, &proximo, &codEstacao, &codLinha,
+                     &codProxEstacao, &distProxEstacao, &codLinhaIntegra,
+                     &codEstIntegra, &tamNomeEstacao, nomeEstacao,
+                     &tamNomeLinha, nomeLinha);
+
+        if (removido == '1')
+            continue;
+
+        if (tamNomeLinha > 0)
+            inserir_hash(tabela, nomeLinha, tamNomeLinha);
+    }
+
+    fseek(bin, 0, SEEK_SET);
+}
+
 int hash_string(char *str, int tam, int primo) {
     int soma = 0;
 
@@ -29,7 +96,6 @@ void liberar_tabela(NoHash *tabela[]) {
     }
 }
 
-//-----------------
 void inicializar_tabela(NoHash *tabela[]) {
     for (int i = 0; i < TAM_TABELA; i++) {
         tabela[i] = NULL;
@@ -73,6 +139,188 @@ NoHash* buscar_hash(NoHash *tabela[], char *nomeLinha, int tamNomeLinha) {
     return NULL;
 }
 
+
+
+/*Funções auxiliares para imprimir informações ao usuário.
+ Quando o campo de inteiro é nulo ou quando o campo de string é nulo
+*/
+void imprime_inteiro_ou_nulo(int valor){
+    if(valor == -1) printf("NULO");
+    else printf("%d", valor);
+}
+
+void imprime_texto_ou_nulo(char *texto, int tamanho){
+    if(tamanho == 0) printf("NULO");
+    else printf("%.*s", tamanho, texto);
+}
+
+
+
+
+
+
+
+
+void buscar_registros(FILE *bin, NoHash *tabela[], int m,
+                      char nomesCampos[][50], char valoresCampos[][200]) {
+    int i, rrn;
+    int achou = 0;
+
+    char status;
+    int topo, proxRRN, nroEstacoes, nroParesEstacoes;
+
+    char removido;
+    int proximo;
+    int codEstacao, codLinha, codProxEstacao, distProxEstacao;
+    int codLinhaIntegra, codEstIntegra;
+    int tamNomeEstacao, tamNomeLinha;
+    char nomeEstacao[200];
+    char nomeLinha[200];
+
+    int temNomeLinha = 0;
+    char valorNomeLinha[200];
+    int tamValorNomeLinha = 0;
+
+    for (i = 0; i < m; i++) {
+        // verifica se um dos campos é nomeLinha
+        if (strcmp(nomesCampos[i], "nomeLinha") == 0) {
+            temNomeLinha = 1;
+            strcpy(valorNomeLinha, valoresCampos[i]);
+            tamValorNomeLinha = strlen(valorNomeLinha);
+        }
+    }
+
+    //Se  tem nomeLinha - usa o hash para buscar usando o nome
+    if (temNomeLinha && strlen(valorNomeLinha) != 0) {
+        NoHash *h = buscar_hash(tabela, valorNomeLinha, tamValorNomeLinha);
+
+        if (h == NULL) {
+            printf("Registro inexistente.\n");
+            return;
+        }
+    }
+
+    fseek(bin, 0, SEEK_SET);
+    ler_cabecalho(bin, &status, &topo, &proxRRN, &nroEstacoes, &nroParesEstacoes);
+    /*ler os registros de forma sequencial
+    Se o registro foi removido, ignora na busca
+    Se não, verifica qual campo foi digitado para busca
+    */
+    for (rrn = 0; rrn < proxRRN; rrn++) {
+        int ok = 1;
+        
+        ler_regdados(bin, &removido, &proximo, &codEstacao, &codLinha,
+                     &codProxEstacao, &distProxEstacao, &codLinhaIntegra,
+                     &codEstIntegra, &tamNomeEstacao, nomeEstacao,
+                     &tamNomeLinha, nomeLinha);
+
+        if (removido == '1')
+            continue;
+
+        for (i = 0; i < m && ok; i++) {
+            if (strcmp(nomesCampos[i], "codEstacao") == 0) {
+                if (strlen(valoresCampos[i]) == 0) {
+                    if (codEstacao != -1)
+                        ok = 0;
+                } else if (codEstacao != atoi(valoresCampos[i])) {
+                    ok = 0;
+                }
+            }
+
+            else if (strcmp(nomesCampos[i], "nomeEstacao") == 0) {
+                if (strlen(valoresCampos[i]) == 0) {
+                    if (tamNomeEstacao != 0)
+                        ok = 0;
+                } else if (tamNomeEstacao == 0 ||
+                           (int)strlen(valoresCampos[i]) != tamNomeEstacao ||
+                           strncmp(nomeEstacao, valoresCampos[i], tamNomeEstacao) != 0) {
+                    ok = 0;
+                }
+            }
+
+            else if (strcmp(nomesCampos[i], "codLinha") == 0) {
+                if (strlen(valoresCampos[i]) == 0) {
+                    if (codLinha != -1)
+                        ok = 0;
+                } else if (codLinha != atoi(valoresCampos[i])) {
+                    ok = 0;
+                }
+            }
+
+            else if (strcmp(nomesCampos[i], "nomeLinha") == 0) {
+                if (strlen(valoresCampos[i]) == 0) {
+                    if (tamNomeLinha != 0)
+                        ok = 0;
+                } else if (tamNomeLinha == 0 ||
+                           (int)strlen(valoresCampos[i]) != tamNomeLinha ||
+                           strncmp(nomeLinha, valoresCampos[i], tamNomeLinha) != 0) {
+                    ok = 0;
+                }
+            }
+
+            else if (strcmp(nomesCampos[i], "codProxEstacao") == 0) {
+                if (strlen(valoresCampos[i]) == 0) {
+                    if (codProxEstacao != -1)
+                        ok = 0;
+                } else if (codProxEstacao != atoi(valoresCampos[i])) {
+                    ok = 0;
+                }
+            }
+
+            else if (strcmp(nomesCampos[i], "distProxEstacao") == 0) {
+                if (strlen(valoresCampos[i]) == 0) {
+                    if (distProxEstacao != -1)
+                        ok = 0;
+                } else if (distProxEstacao != atoi(valoresCampos[i])) {
+                    ok = 0;
+                }
+            }
+
+            else if (strcmp(nomesCampos[i], "codLinhaIntegra") == 0) {
+                if (strlen(valoresCampos[i]) == 0) {
+                    if (codLinhaIntegra != -1)
+                        ok = 0;
+                } else if (codLinhaIntegra != atoi(valoresCampos[i])) {
+                    ok = 0;
+                }
+            }
+
+            else if (strcmp(nomesCampos[i], "codEstIntegra") == 0) {
+                if (strlen(valoresCampos[i]) == 0) {
+                    if (codEstIntegra != -1)
+                        ok = 0;
+                } else if (codEstIntegra != atoi(valoresCampos[i])) {
+                    ok = 0;
+                }
+            }
+        }
+
+
+
+
+        if (ok) {
+            imprime_inteiro_ou_nulo(codEstacao);
+            imprime_texto_ou_nulo(nomeEstacao, tamNomeEstacao);
+            imprime_inteiro_ou_nulo(codLinha);
+            imprime_texto_ou_nulo(nomeLinha, tamNomeLinha);
+            imprime_inteiro_ou_nulo(codProxEstacao);
+            imprime_inteiro_ou_nulo(distProxEstacao);
+            imprime_inteiro_ou_nulo(codLinhaIntegra);
+            imprime_inteiro_ou_nulo(codEstIntegra);
+
+            achou = 1;
+        }
+    }
+
+    if (!achou)
+        printf("Registro inexistente.\n");
+}
+
+
+/* Função que recebe um arquivo csv, com as especificações do trabalho e 
+retorna a informação nas variáveis correspondentes. 
+
+*/
 int ler_registro_csv(FILE *csv,
                      int *codEstacao,
                      char *nomeEstacao,
@@ -182,8 +430,6 @@ void adicionar_csv_no_binario(FILE *csv, FILE *bin, NoHash *tabela[]) {
 
     int rrn_atual;
     long byteoffset;
-    int debug_count = 0;
-    int i;
 
     if (csv == NULL || bin == NULL) {
         printf("Falha no processamento do arquivo.\n");
@@ -224,8 +470,7 @@ void adicionar_csv_no_binario(FILE *csv, FILE *bin, NoHash *tabela[]) {
                             &codProxEstacao,
                             &distProxEstacao,
                             &codLinhaIntegra,
-                            &codEstIntegra))
-        {
+                            &codEstIntegra)) {
 
         removido = '0';
         proximo = -1;
@@ -244,7 +489,7 @@ void adicionar_csv_no_binario(FILE *csv, FILE *bin, NoHash *tabela[]) {
                          &tamNomeLinha,
                          nomeLinha);
 
-        {
+        
             NoHash *busca = buscar_hash(tabela, nomeEstacao, tamNomeEstacao);
 
             if (busca == NULL) {
@@ -253,24 +498,11 @@ void adicionar_csv_no_binario(FILE *csv, FILE *bin, NoHash *tabela[]) {
             } else {
                 busca->repeticoes++;
             }
-        }
+        
 
-        if (codProxEstacao != -1) {
+        if (codProxEstacao != -1) 
             nroParesEstacoes++;
-        }
-
-        if (debug_count < 10) {
-            printf("REGISTRO %d\n", debug_count + 1);
-            printf("codEstacao = %d\n", codEstacao);
-            printf("nomeEstacao = ");
-            for (i = 0; i < tamNomeEstacao; i++) {
-                printf("%c", nomeEstacao[i]);
-            }
-            printf("\n");
-            printf("-------------------------\n");
-            debug_count++;
-        }
-
+        
         rrn_atual++;
         byteoffset += TAM_REG;
     }
@@ -282,17 +514,14 @@ void adicionar_csv_no_binario(FILE *csv, FILE *bin, NoHash *tabela[]) {
     escreve_cabecalho(bin, &status, &topo, &proxRRN, &nroEstacoes, &nroParesEstacoes);
 }
 
-void imprime_inteiro_ou_nulo(int valor){
-    if(valor == -1) printf("NULO");
-    else printf("%d", valor);
-}
 
-void imprime_texto_ou_nulo(char *texto, int tamanho){
-    if(tamanho == 0) printf("NULO");
-    else printf("%.*s", tamanho, texto);
-}
 
+
+
+/*Função que lê todos os registros do arquivo binário e retorna essas informações de forma sequencial.
+*/
 void mostrar_binario_sequencial(FILE *bin){
+    // Cria um registro temporário para ler os dados do arquivo
     char status;
     int topo, proxRRN, nroEstacoes, nroParesEstacoes;
 
@@ -312,13 +541,16 @@ void mostrar_binario_sequencial(FILE *bin){
         return;
     }
 
+    // Posiciona a leitura no inicio do arquivo e le o registro de cabeçalho
     fseek(bin, 0, SEEK_SET);
     ler_cabecalho(bin, &status, &topo, &proxRRN, &nroEstacoes, &nroParesEstacoes);
     if (proxRRN == 0 || nroEstacoes == 0) {
+            //Nao existem registros
             printf("Registro inexistente.\n");
     return;
-}
+    }
     if(status != '1'){
+        // O status é diferente de 1, indica inconsistencia de dados.
         printf("Falha no processamento do arquivo.\n");
         return;
     }
@@ -337,8 +569,10 @@ void mostrar_binario_sequencial(FILE *bin){
                      nomeEstacao,
                      &tamNomeLinha,
                      nomeLinha);
-
+        // Se o registro está marcado como removido, não imprime
         if(removido == '1') continue;
+
+        // Registro não removido - Usa as funções auxilares para imprimir inteiro ou string
         imprime_inteiro_ou_nulo(codEstacao);
         printf(" ");
 
