@@ -15,7 +15,7 @@ int main() {
     while (scanf("%d", &operacao) != EOF) {
 
         if (operacao == 1) {
-            /*Primeira operação: CREATE TABLE -> Dado o arquivo csv, lê as informações, armazenada apropriadamente como registro no arquivo 
+            /*Primeira operação: CREATE TABLE -> Dado o arquivo csv, lê as informações, armazena apropriadamente como registro no arquivo 
             binário*/
             scanf("%s %s", nome_csv, nome_bin);
 
@@ -93,7 +93,15 @@ int main() {
     }
 
     fclose(bin);
-}
+}else if(operacao ==4){
+        /*DELETE FROM --> Usa a função de busca para encontrar os registros com os campos a serem removidos
+        Atualiza os campos removido e próximo do registro e o topo do cabeçalho.*/
+
+
+        
+
+
+            }
     }
 
     liberar_tabela(tabela);
