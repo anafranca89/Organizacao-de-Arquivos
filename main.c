@@ -15,12 +15,15 @@ int main() {
     while (scanf("%d", &operacao) != EOF) {
 
         if (operacao == 1) {
+            /*Primeira operação: CREATE TABLE -> Dado o arquivo csv, lê as informações, armazenada apropriadamente como registro no arquivo 
+            binário*/
             scanf("%s %s", nome_csv, nome_bin);
 
             FILE *csv = fopen(nome_csv, "r");
             FILE *bin = fopen(nome_bin, "w+b");
-
+            
             if (csv == NULL || bin == NULL) {
+                // Mensagems de erro. Fecha os arquivos que foram abertos e libera a memória
                 printf("Falha no processamento do arquivo.\n");
                 if (csv != NULL) fclose(csv);
                 if (bin != NULL) fclose(bin);
@@ -37,6 +40,9 @@ int main() {
         }
 
         else if (operacao == 2) {
+            /*Operação 2: SELECT
+            Mostra os registros guardados no arquivo binário, de forma sequencial.
+            */
             scanf("%s", nome_bin);
 
             FILE *bin = fopen(nome_bin, "rb");
