@@ -1,6 +1,10 @@
 #ifndef ARVOREB_H
 #define ARVOREB_H
+
 #include "registros.h"
+#define NEGATIVO -1
+#define TAM_CAB_IND 17
+#define TAM_REG_IND 53
 //Funções que definem a arvore B, como busca, inserção e remoção
 //Para isso precisamos do arquivo de indices e struct de indices.
 
@@ -26,8 +30,8 @@ typedef struct reg_indice{
     int C3;
     int Pr3;
     //arvx = Px -- é o ponteiro(byteoffset) para subarvore correspondente 
-    int arv2; 
     int arv1; 
+    int arv2; 
     int arv3; 
     int arv4; 
 }indice;
@@ -43,10 +47,7 @@ void escreve_indice(FILE *ponteiro_arquivo, indice* ind);
 
 
 
-/*Assumindo q existe os registro de índice.
-Busca uma chave única int - codEstacao-  num nó da árvore.
-*/
-void busca_chave();
+void busca_chave(int rrn_no, int chave_unica, int *byte_chave_buscada);
 
 
 
