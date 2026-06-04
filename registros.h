@@ -5,13 +5,23 @@
 #define TAM_REG 80
 #define TAM_CABECALHO 17
 
-
+void ler_cabecalho(FILE* ponteiro_arquivo, char *status, int *topo, int *proxRRN, int *nroEstacoes, int *nroParesEstacoes){
+    if (ponteiro_arquivo == NULL) {
+        printf("Falha no processamento do arquivo.\n"); 
+        return;
+    }
+    fread(status, sizeof(char), 1, ponteiro_arquivo);
+    fread(topo, sizeof(int), 1, ponteiro_arquivo);
+    fread(proxRRN, sizeof(int), 1, ponteiro_arquivo);
+    fread(nroEstacoes, sizeof(int), 1, ponteiro_arquivo);
+    fread(nroParesEstacoes, sizeof(int), 1, ponteiro_arquivo);
+}
 typedef struct reg_cabecalho{
     char status;
-    int noRaiz;
     int topo;
     int proxRRN;
-    int nroNos;
+    int nroEstacoes;
+    int nroParesEstacoes;
 }cabecalho;
 
 typedef struct reg_dados{
@@ -33,23 +43,7 @@ typedef struct reg_dados{
 }dados;
 
 
-typedef struct reg_indice{
-    char removido;
-    int proximo;
-    int tipoNo;
-    int nroChaves;
-    int C1;
-    int Pr1;
-    int C2;
-    int Pr2;
-    int C3;
-    int Pr3;
-    //arvx = Px -- é o ponteiro(byteoffset) para subarvore correspondente 
-    int arv2; 
-    int arv1; 
-    int arv3; 
-    int arv4; 
-}indice;
+
 
 FILE *ler_binario(char *arqbin);
 FILE* escrever_binario(char *arqbin);
@@ -61,7 +55,5 @@ void ler_regdados(FILE* ponteiro_arquivo, dados* reg_dados);
 void escreve_regdados(FILE *ponteiro_arquivo, dados* reg_dados);
 
 
-void ler_indice(FILE* ponteiro_arquivo, indice* reg_indice );
-void escreve_indice(FILE *ponteiro_arquivo, indice* reg_indice);
 
 #endif

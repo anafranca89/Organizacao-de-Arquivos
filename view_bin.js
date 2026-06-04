@@ -45,11 +45,11 @@ registerParser((filePath) => {
                 read(4); addRow('nroChaves', getSignedNumberValue(), '');
                 
                 read(4); addRow('C1', getSignedNumberValue(), 'Chave 1');
-                read(4); addRow('Pr1', getSignedNumberValue(), 'RRN da Chave 1');
+                read(4); addRow('Pr1', getSignedNumberValue(), 'ByteOffset da Chave 1');
                 read(4); addRow('C2', getSignedNumberValue(), 'Chave 2');
-                read(4); addRow('Pr2', getSignedNumberValue(), 'RRN da Chave 2');
+                read(4); addRow('Pr2', getSignedNumberValue(), 'ByteOffset da Chave 2');
                 read(4); addRow('C3', getSignedNumberValue(), 'Chave 3');
-                read(4); addRow('Pr3', getSignedNumberValue(), 'RRN da Chave 3');
+                read(4); addRow('Pr3', getSignedNumberValue(), 'ByteOffset da Chave 3');
                 
                 read(4); addRow('P1', getSignedNumberValue(), 'Ponteiro < C1');
                 read(4); addRow('P2', getSignedNumberValue(), 'Ponteiro < C2');
