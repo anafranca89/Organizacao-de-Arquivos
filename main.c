@@ -134,7 +134,12 @@ int main() {
                 cria_arvore(arq_dados,     );
 
                 break;
+            case 8;
+                
 
+
+
+                break;
 
         }
 
