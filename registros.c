@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <string.h>
 #include "registros.h"
 
 /*Funções para o ARQUIVO BINÁRIO DE SAÍDA. Retornam o ponteiro de arquivo  fopen!*/
@@ -27,35 +28,43 @@ FILE * escrever_binario(char *arqbin){
 }
 
 
-
+cabecalho cria_cabecalho(){
+    cabecalho aux;
+    aux.status = 0
+    aux.topo =-1
+    aux.proxRRN =0
+    aux.nroEstacoes =
+    aux.nroParesEstacoes =0;
+    return aux;
+}
 
 /*Lê os dados do cabeçalho e coloca nas variáveis dadas
 ATENÇÃO: ponteiros deve estar bem posicionado no começo do cabeçalho, senão dá erro
 */
-void ler_cabecalho(FILE* ponteiro_arquivo, char *status, int *topo, int *proxRRN, int *nroEstacoes, int *nroParesEstacoes){
+void ler_cabecalho(FILE* ponteiro_arquivo, cabecalho *reg_cabecalho){
     if (ponteiro_arquivo == NULL) {
         printf("Falha no processamento do arquivo.\n"); 
         return;
     }
-    fread(status, sizeof(char), 1, ponteiro_arquivo);
-    fread(topo, sizeof(int), 1, ponteiro_arquivo);
-    fread(proxRRN, sizeof(int), 1, ponteiro_arquivo);
-    fread(nroEstacoes, sizeof(int), 1, ponteiro_arquivo);
-    fread(nroParesEstacoes, sizeof(int), 1, ponteiro_arquivo);
+    fread(reg_cabecalho->status, sizeof(char), 1, ponteiro_arquivo);
+    fread(reg_cabecalho->topo, sizeof(int), 1, ponteiro_arquivo);
+    fread(reg_cabecalho->proxRRN, sizeof(int), 1, ponteiro_arquivo);
+    fread(reg_cabecalho->nroEstacoes, sizeof(int), 1, ponteiro_arquivo);
+    fread(reg_cabecalho->nroParesEstacoes, sizeof(int), 1, ponteiro_arquivo);
 }
 
 /* Dado o arquivo binário, atualiza os valores no cabeçalho
 ATENÇÃO: ponteiros deve estar bem posicionado no começo do cabeçalho, senão dá erro*/
-void escreve_cabecalho(FILE* ponteiro_arquivo, char *status, int *topo, int *proxRRN, int *nroEstacoes, int *nroParesEstacoes){
+void escreve_cabecalho(FILE* ponteiro_arquivo, cabecalho *reg_cabecalho){
     if (ponteiro_arquivo == NULL) {
         printf("Falha no processamento do arquivo.\n"); 
         return;
     }
-    fwrite(status, sizeof(char), 1, ponteiro_arquivo);
-    fwrite(topo, sizeof(int), 1, ponteiro_arquivo);
-    fwrite(proxRRN, sizeof(int), 1, ponteiro_arquivo);
-    fwrite(nroEstacoes, sizeof(int), 1, ponteiro_arquivo);
-    fwrite(nroParesEstacoes, sizeof(int), 1, ponteiro_arquivo);
+    fwrite(reg_cabecalho->status, sizeof(char), 1, ponteiro_arquivo);
+    fwrite(reg_cabecalho->topo, sizeof(int), 1, ponteiro_arquivo);
+    fwrite(reg_cabecalho->proxRRN, sizeof(int), 1, ponteiro_arquivo);
+    fwrite(reg_cabecalho->nroEstacoes, sizeof(int), 1, ponteiro_arquivo);
+    fwrite(reg_cabecalho->nroParesEstacoes, sizeof(int), 1, ponteiro_arquivo);
 }
 
 
@@ -66,54 +75,70 @@ void escreve_cabecalho(FILE* ponteiro_arquivo, char *status, int *topo, int *pro
 /*Leitura e Escrita de Registros. 
 Dado o arquivo binário, retorna as informções naquele registro
 ATENÇÃO */
-void ler_regdados(FILE* ponteiro_arquivo, char *removido,int *proximo, int *codEstacao, int *codLinha, int *codProxEstacao,int *distProxEstacao, 
-int *codLinhaIntegra, int *codEstIntegra, int *tamNomeEstacao, char *nomeEstacao, int *tamNomeLinha, char *nomeLinha){
+void ler_regdados(FILE* ponteiro_arquivo, dados* reg_dados){
     if (ponteiro_arquivo == NULL) {
         printf("Falha no processamento do arquivo.\n"); 
         return;
     }
-    fread(removido, sizeof(char), 1, ponteiro_arquivo);
-    fread(proximo, sizeof(int), 1, ponteiro_arquivo);
-    fread(codEstacao, sizeof(int), 1, ponteiro_arquivo);
-    fread(codLinha, sizeof(int), 1, ponteiro_arquivo);
-    fread(codProxEstacao, sizeof(int), 1, ponteiro_arquivo);
-    fread(distProxEstacao, sizeof(int), 1, ponteiro_arquivo);
-    fread(codLinhaIntegra, sizeof(int), 1, ponteiro_arquivo);
-    fread(codEstIntegra, sizeof(int), 1, ponteiro_arquivo);
-    fread(tamNomeEstacao, sizeof(int), 1, ponteiro_arquivo);
-    fread(nomeEstacao, sizeof(char), *tamNomeEstacao, ponteiro_arquivo);
-    fread(tamNomeLinha, sizeof(int), 1, ponteiro_arquivo);
-    fread(nomeLinha, sizeof(char), *tamNomeLinha, ponteiro_arquivo);
-    int bytes_escritos = 37 + *tamNomeEstacao + *tamNomeLinha;
-    char lixo = '$';
-    while (bytes_escritos < 80) {
-        fread(&lixo, sizeof(char), 1, ponteiro_arquivo);
-        bytes_escritos++;
+    fread(&reg_dados->removido, sizeof(char), 1, ponteiro_arquivo);
+    fread(&reg_dados->proximo, sizeof(int), 1, ponteiro_arquivo);
+    fread(&reg_dados->codEstacao, sizeof(int), 1, ponteiro_arquivo);
+    fread(&reg_dados->codLinha, sizeof(int), 1, ponteiro_arquivo);
+    fread(&reg_dados->codProxEstacao, sizeof(int), 1, ponteiro_arquivo);
+    fread(&reg_dados->distProxEstacao, sizeof(int), 1, ponteiro_arquivo);
+    fread(&reg_dados->codLinhaIntegra, sizeof(int), 1, ponteiro_arquivo);
+    fread(&reg_dados->codEstIntegra, sizeof(int), 1, ponteiro_arquivo);
+
+
+    fread(&reg_dados->tamNomeEstacao, sizeof(int), 1, ponteiro_arquivo);
+    fread(reg_dados->nomeEstacao, sizeof(char), reg_dados->tamNomeEstacao, ponteiro_arquivo);
+    //ultimo byte-- terminador da string
+    reg_dados->nomeEstacao[reg_dados->tamNomeEstacao] = '\0';
+
+    fread(&reg_dados->tamNomeLinha, sizeof(int), 1, ponteiro_arquivo);
+    fread(reg_dados->nomeLinha, sizeof(char), reg_dados->tamNomeLinha, ponteiro_arquivo);
+    reg_dados->nomeLinha[reg_dados->tamNomeLinha] = '\0';
+
+    int bytes_escritos = 37 + reg_dados->tamNomeEstacao + reg_dados->tamNomeLinha;
+    int lixo_a_pular = TAM_REG - bytes_escritos;
+    if (lixo_a_pular > 0) {
+        fseek(ponteiro_arquivo, lixo_a_pular, SEEK_CUR);
     }
 }
 
-void escreve_regdados(FILE* ponteiro_arquivo, char *removido,int *proximo, int *codEstacao, int *codLinha, int *codProxEstacao,int *distProxEstacao, 
-int *codLinhaIntegra, int *codEstIntegra, int *tamNomeEstacao, char *nomeEstacao, int *tamNomeLinha, char *nomeLinha){
+void escreve_regdados(FILE* ponteiro_arquivo, dados *reg_dados){
     if (ponteiro_arquivo == NULL) {
         printf("Falha no processamento do arquivo.\n"); 
         return;
     }
-    fwrite(removido, sizeof(char), 1, ponteiro_arquivo);
-    fwrite(proximo, sizeof(int), 1, ponteiro_arquivo);
-    fwrite(codEstacao, sizeof(int), 1, ponteiro_arquivo);
-    fwrite(codLinha, sizeof(int), 1, ponteiro_arquivo);
-    fwrite(codProxEstacao, sizeof(int), 1, ponteiro_arquivo);
-    fwrite(distProxEstacao, sizeof(int), 1, ponteiro_arquivo);
-    fwrite(codLinhaIntegra, sizeof(int), 1, ponteiro_arquivo);
-    fwrite(codEstIntegra, sizeof(int), 1, ponteiro_arquivo);
-    fwrite(tamNomeEstacao, sizeof(int), 1, ponteiro_arquivo);
-    fwrite(nomeEstacao, sizeof(char), *tamNomeEstacao, ponteiro_arquivo);
-    fwrite(tamNomeLinha, sizeof(int), 1, ponteiro_arquivo);
-    fwrite(nomeLinha, sizeof(char), *tamNomeLinha, ponteiro_arquivo);
-    int bytes_escritos = 37 + *tamNomeEstacao + *tamNomeLinha;
-    char lixo = '$';
-    while (bytes_escritos < 80) {
-        fwrite(&lixo, sizeof(char), 1, ponteiro_arquivo);
-        bytes_escritos++;
+    //atualiza os tamanhos das strings
+    reg_dados->tamNomeEstacao = strlen(reg_dados->nomeEstacao);
+    reg_dados->tamNomeLinha = strlen(reg_dados->nomeLinha);
+
+    fwrite(&reg_dados->removido, sizeof(char), 1, ponteiro_arquivo);
+    fwrite(&reg_dados->proximo, sizeof(int), 1, ponteiro_arquivo);
+    fwrite(&reg_dados->codEstacao, sizeof(int), 1, ponteiro_arquivo);
+    fwrite(&reg_dados->codLinha, sizeof(int), 1, ponteiro_arquivo);
+    fwrite(&reg_dados->codProxEstacao, sizeof(int), 1, ponteiro_arquivo);
+    fwrite(&reg_dados->distProxEstacao, sizeof(int), 1, ponteiro_arquivo);
+    fwrite(&reg_dados->codLinhaIntegra, sizeof(int), 1, ponteiro_arquivo);
+    fwrite(&reg_dados->codEstIntegra, sizeof(int), 1, ponteiro_arquivo);
+
+
+
+    fwrite(&reg_dados->tamNomeEstacao, sizeof(int), 1, ponteiro_arquivo);
+    fwrite(reg_dados->nomeEstacao, sizeof(char), reg_dados->tamNomeEstacao, ponteiro_arquivo);
+
+    fwrite(&reg_dados->tamNomeLinha, sizeof(int), 1, ponteiro_arquivo);
+    fwrite(reg_dados->nomeLinha, sizeof(char), reg_dados->tamNomeLinha, ponteiro_arquivo);
+
+    int bytes_escritos = 37 + reg_dados->tamNomeEstacao + reg_dados->tamNomeLinha;
+    int lixo_escrever = TAM_REG - bytes_escritos;
+
+    if (lixo_a_escrever > 0) {
+        //Cria um buffer temporário de '$'
+        char lixo[50];
+        memset(lixo, '$', lixo_a_escrever);
+        fwrite(lixo, sizeof(char), lixo_a_escrever, ponteiro_arquivo);
     }
 }

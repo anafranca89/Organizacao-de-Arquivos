@@ -25,7 +25,7 @@ typedef struct reg_cabecalho{
 }cabecalho;
 
 typedef struct reg_dados{
-    char removido;
+    char removido; 
     int proximo;
     int codEstacao;
     int codLinha;
@@ -33,19 +33,21 @@ typedef struct reg_dados{
     int distProxEstacao;
     int codLinhaIntegra;
     int codEstIntegra;
-    int tamNomeEstacao;
-
-    char nomeEstacao;// tamvariavel
-
+    int tamNomeEstacao; 
+    /*espaço de 50 - suficiente para o pior caso, onde apenas uma das strings ocupa os 
+    80 - 37 = 43 bytes restantes */
+    char nomeEstacao[50];
     int tamNomeLinha;
-
-    char nomeLinha; // tamanho variavel
+    char nomeLinha[50]; 
 }dados;
 
 
-
+//construtores
+cabecalho cria_cabecalho();
+dados cria_dados();
 
 FILE *ler_binario(char *arqbin);
+FILE * cria_escreve_binario(char *arqbin);
 FILE* escrever_binario(char *arqbin);
 
 void ler_cabecalho(FILE* ponteiro_arquivo, cabecalho *reg_cab);
