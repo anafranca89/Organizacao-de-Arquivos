@@ -131,14 +131,21 @@ Caso2: Arquivo existe --> apenas abre arquivo p/escrita
         - verifica se n é logicamente removido, senão vai pro proximo registro
         - removido == 0, então tenta inserir na raiz
         - segue a função de inserção
-
+            - retornou PROMOTION => raiz sofreu split
+            - cria novo nó
+        - Atualiza cabeçalho da arvore
+        - fecha arquivo
 */
-void cria_arvore(FILE* arq_dados, char*arq_index ,){
+
+
+void cria_arvore(FILE* arq_dados, char*arq_index ){
 
     FILE* indexes = escrever_binario( arq_index);
     cab_indice index_cab = new_cab_indice();
     if(indexes == NULL){
         indexes = cria_escreve_binario(arq_index);
+        // escrita inicial - status inconsistente
+        index_cab.status = '0';
         escreve_ind_cabecalho(indexes, &index_cab);
     }
     ler_ind_cabecalho(indexes, &index_cab);
@@ -150,26 +157,42 @@ void cria_arvore(FILE* arq_dados, char*arq_index ,){
     if(reg_cab_dados.status == 0){
         //status inconsistente ? --> Erro 
         printf("Falha no processamento do arquivo.");
+        fclose(indexes);
         return;
     }
-    fseek(arq_dados, TAM_CABECALHO,SEEK_SET);
+    //fseek(arq_dados, TAM_CABECALHO,SEEK_SET); o ponteiro já esta no final do cabeçalho :)
 
     dados reg_dados = cria_dados();
+
     //leitura dos registros e inserção na arvore
     for(int i=0; i<reg_cab_dados.proxRRN; i++){
+
+        int byteoffset_dados = calculo_byteoffset_dados(i);
+        fseek(arq_dados, byteoffset_dados, SEEK_SET);
         // é removido?
         ler_regdados(arq_dados, &reg_dados);
         if (reg_dados.removido =='1') continue; // o ponteiro do fseek já está no começo do registro i+1
 
-        int promotion, filho_promovido, chave_promovida;
+        int filho_promovido, chave_promovida, byte_dados_promovido;
 
-        promotion= insere_arvore(arq_dados, &index_cab, index_cab.noRaiz,  reg_dados.codEstacao,     
-                     filho_promovido,  chave_promovida);
-            if (PROMOTION == )
+        int retorno_prom = insere_arvore(arq_dados, &index_cab, index_cab.noRaiz,  reg_dados.codEstacao,     
+                     &filho_promovido,  &byte_dados_promovido);
+
+        if (retorno_prom == PROMOTION ){
+
+        }
     
     }
 
+    index_cab.status = '1';
+    fseek(indexes, 0, SEEK_SET);
+    escreve_ind_cabecalho(indexes, &index_cab);
+    
+    fclose(indexes); 
 }
+
+
+
 
 
 /*Assumindo q existe o arquivo de indice existe e é != NULL.
@@ -340,8 +363,7 @@ int insere_arvore(FILE* arq_index, cab_indice *cabecalho, int rrn_no , int chave
 
     //No tem espaço?
     if (no_aux.nroChaves<3){
-        //insere chave na pagina 
-        //FAZER FUNCAO
+        insere_ordenado_no(&no, chave, filho_promovido, byte_dados_chave);
         return NO_PROMOTION;
     }else{
             //split 
@@ -358,6 +380,7 @@ void cria_novoNo( ){
 
 }
 
+
 /*Sobreescreve o no de indice, para ordenar as chaves dentro dele.
  Como ele insere no nó, é assumido que nroChaves<3.
  Parametros: no p/sobrescerver, chave, filho dessa chave, e o ponteiro p/arquivo de dados.
@@ -369,9 +392,7 @@ void cria_novoNo( ){
                         - insere no espaço 3
                         - shifta tudo e insere no inicio
                         - shifta o espaço 2 e insere no meio.
-
 */
-
 void insere_ordenado_no(indice *no, int chave, int filho_promovido,  int byte_ponteiro){
     if(no->nroChaves == 0){
         no->C1 = chave;
@@ -413,4 +434,61 @@ void insere_ordenado_no(indice *no, int chave, int filho_promovido,  int byte_po
         no->nroChaves = 3;
     }
     
+}
+
+
+
+/* Cria um novo no, promove uma chave e a sub arvore, copiando os valores anteriores.
+Parametros: arquivo de indezx, cabeçalho do index, rrn do no, o proprio no, 
+            chave q deve ser inserida, o rrn filho, e o byte_ponteiro.
+            a chave q é realmente promovida, o seu byte ponteiro e seu filho
+
+    - copia as chaves da pag atual e compara com a chave.
+    - ordena as chaves
+    - aloca um novo no no index
+    - atualiza a chave a ser promovida e o filho a ser promovido 
+    - organiza as chaves nos 2 nós e retorna a novapagina.
+*/
+void split (FILE *arq_index, cab_indice *cab_ind, int rrn_no_ant, indice *no_ant, 
+           int chave, int byte_chave, int filho_chave,
+           int *chave_promovida, int *byte_promovido, int *filho_promovido ){
+    //estrutura para ordenar as chaves, subarvores e ponteiros.
+    int chaves_temp[4];
+    int byte_temp[4];
+    int arv_temp[5];
+
+    chaves_temp[0] = no_antigo->C1; byte_temp[0] = no_antigo->Pr1;
+    chaves_temp[1] = no_antigo->C2; byte_temp[1] = no_antigo->Pr2;
+    chaves_temp[2] = no_antigo->C3; byte_temp[2] = no_antigo->Pr3;
+
+    arv_temp[0] = no_antigo->arv1;
+    arv_temp[1] = no_antigo->arv2;
+    arv_temp[2] = no_antigo->arv3;
+    arv_temp[3] = no_antigo->arv4;
+
+    int i = 2;
+    while (i >= 0 && chave_promovida_sub < chaves_temp[i]) {
+        //shift os elementos para 'liberar' o espaço p/ chave inserida
+        chaves_temp[i + 1] = chaves_temp[i];
+        byte_temp[i + 1] = byte_temp[i];
+        arv_temp[i + 2] = arv_temp[i + 1]; 
+        i--;
+    }
+
+    chaves_temp[i + 1] = chave;
+    byte_temp[i + 1] = byte_chave;
+    arv_temp[i + 2] = filho_chave;
+
+    indice novo_no = new_indice();
+    novo_no.tipoNo = no_ant->tipoNo; 
+
+
+    int rrn_novo_no = cab_ind->proxRRN;
+
+    //Distribuição dos valores
+    /*  chave 0, 1 -> nó antigo
+        chave 2, 3 -> novo no -> chave 2 é promovida
+        s
+
+    */
 }
