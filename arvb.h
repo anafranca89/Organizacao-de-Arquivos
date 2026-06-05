@@ -4,6 +4,9 @@
 #define NEGATIVO -1
 #define TAM_CAB_IND 17
 #define TAM_REG_IND 53
+#define PROMOTION 1
+#define NO_PROMOTION 0
+
 //Funções que definem a arvore B, como busca, inserção e remoção
 //Para isso precisamos do arquivo de indices e struct de indices.
 
@@ -20,7 +23,7 @@ typedef struct reg_cabecalho{
 typedef struct reg_indice{
     char removido;
     int proximo;
-    int tipoNo;
+    int tipoNo; //raiz 0, intermediario 1, folha -1
     int nroChaves;
     int C1;
     int Pr1;
@@ -44,17 +47,17 @@ void escreve_indice(FILE *ponteiro_arquivo, indice* ind);
 
 
 
+int calculo_byteoffset_indice(int RRN);
 
-
-void busca_chave(FILE *arquivo, int rrn_no, int chave_unica, int *byte_found);
+int busca_arvore(FILE *arquivo, int rrn_no, int chave_unica);
 
 void cria_arvore(FILE* arq_dados, char*arq_index ,);
 
 
-void insere_arvore(FILE* arq_dados,
+int insere_arvore(FILE* arq_dados,
                      int rrn_no , int chave,    
-                     int filho_promovido, int chave_promovida,
-                    int PROMOTION);
+                     int filho_promovido, int chave_promovida
+                    /*int PROMOTION*/);
                     
 void cria_novoNo();
 

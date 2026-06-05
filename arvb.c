@@ -96,10 +96,11 @@ cab_indice new_cab_indice(){
 }
 
 
-/*Construtor Base de Um índice--> Valores são criados com o valor  padrão*/
+/*Construtor Base de Um índice--> Valores são criados com o valor  padrão
+removido =0, proximo = -1, chaves e ponteiros -1, nrChaves =0*/
 indice new_indice(){
     indice aux; 
-    aux.removido = 0;
+    aux.removido = '0';
     aux.proximo= NEGATIVO;
     aux.tipoNo= NEGATIVO;
     aux.nroChaves= 0;
@@ -117,68 +118,10 @@ indice new_indice(){
 }
 
 
-
-
-
-
-
-
-/*Assumindo q existe os registro de índice.
-Busca uma chave única int - codEstacao-  num nó da árvore.
-Caso 1: Arvore com elementos --> raiz >=0
-Caso 2: Arvore vazia --> raiz == -1
-
-    -Chama a função no no raiz
-    - o No está cheio?  nrochaves == 3
-        -percorre as chaves do no, a chave buscada está lá?
-            -byte_found recebe o ponteiro para o reg_dados
-        - Senão, busca(subarvore correspondente) --> recursao
-    - O no tem espaço ? -- nrochaves<3
-        - 
-
-*/
-void busca_chave(FILE *arquivo, int rrn_no, int chave_unica, int *byte_found){
-    if(rrn_no==NEGATIVO){
-        *byte_found = NEGATIVO;
-        return;
-    } 
-    indice aux; //colocar p/fora da função
-    int bytecorrente = rrn_no*TAM_REG_IND + TAM_CAB_IND;
-    //byte_found = bytecorrente;
-    //posiciona no lugar de leitura dos dados
-    fseek(arquivo, bytecorrente, SEEK_SET);
-    ler_indice(arquivo, &aux);
-    if(aux.removido == '1'){
-        *byte_found = NEGATIVO;
-        return;
-    }
-    // no não removido 
-    // adicionar a leitura e analise do nro de chaves!!!!!!!!!1
-    if(chave_unica< aux.C1){
-        //busca na subarvore 1 a esquerda.
-        busca_chave(aux.arv1, chave_unica, byte_found);
-    }else if(chave_unica== aux.C1){
-        //achou a chave
-        byte_found = aux.Pr1;
-        return;
-    }else if(chave_unica< aux.C2){
-        busca_chave(aux.arv2, chave_unica, byte_found);
-        
-    }else if(chave_unica == aux.C2 ){
-        byte_found = aux.Pr2;
-        return;
-        
-    }else if(chave_unica < aux.C3){
-        busca_chave(aux.arv3, chave_unica, byte_found);
-    }
-    else if(chave_unica==aux.C3){
-        byte_found = aux.Pr3;
-        return;
-    }else{
-        busca_chave(aux.arv4, chave_unica, byte_found);
-    }
-      
+int calculo_byteoffset_indice(int RRN){
+    return RRN*TAM_REG_IND +TAM_CAB_IND;
 }
+
 
 
 /*Algoritmo Driver: Cria a lista de nós da árvore.
@@ -220,13 +163,182 @@ void cria_arvore(FILE* arq_dados, char*arq_index ,){
 
         int PROMOTION =0, filho_promovido, chave_promovida;
 
-        insere_arvore(arq_dados, index_cab.noRaiz,  reg_dados.codEstacao,     
+        insere_arvore(arq_dados, &index_cab, index_cab.noRaiz,  reg_dados.codEstacao,     
                      filho_promovido,  chave_promovida,
-                     PROMOTION);
+                     );
             if (PROMOTION == 1){
                 cria_novoNo();
             }
     }
 
+
+}
+
+
+/*Assumindo q existe o arquivo de indice existe e é != NULL.
+Busca uma chave única int - codEstacao-  num nó da árvore.
+Caso 1: Arvore com elementos --> rrn da raiz >=0
+Caso 2: Arvore vazia --> rrn da raiz == -1
+Parametros: Arquivo de indices, rrn do no onde faz a busca, a chave para busca, 
+        e a posicao (1, 2, 3) da chave (Real ou Onde deveria estar)
+        ------util para inserção
+Retorna : RRN do nó onde a busca terminou --> -1 se não existe a chave
+
+->Chama a função no nó raiz
+    - arvore existe? 
+        - Se não - retorna -1
+        - Se sim - continua
+    - No atual foi removido?
+        - retorna -1, ou seja, não encontrou a chave
+    - Senão - Lê nó (posiciona o ponteiro para ler o no exato)
+        - chave está no nó ? 
+            - se sim, acaba a busca, retorna o rrn e atualiza a pos_chava_no
+            - se não, verifica se é nó intermediário
+                - se sim, continua a busca recursivamente
+                - se não, termina a busca. E no folha - logo sem descendentes p/buscar.
+
+*/
+int busca_arvore(FILE *arquivo, int rrn_no, int chave_unica, int *pos_chave_no){
+    if(rrn_no==NEGATIVO){
+        if (pos_chave != NULL) *pos_chave_no = NEGATIVO;
+        return NEGATIVO;
+    } 
+    indice aux;
+    int bytecorrente = calculo_byteoffset_indice(rrn_no);
+    //posiciona no lugar de leitura dos dados
+    fseek(arquivo, bytecorrente, SEEK_SET);
+    ler_indice(arquivo, &aux);
+
+    if(aux.removido == '1'){
+        if (pos_chave_no != NULL) *pos_chave_no = NEGATIVO;
+        return NEGATIVO;
+    }
+
+    // no não removido 
+    if (chave_unica == aux.C1) {
+        if (pos_chave_no != NULL) *pos_chave_no = 1;
+        return rrn_no;
+    } 
+    else if (aux.nroChaves >= 2 && chave_unica == aux.C2) {
+        if (pos_chave_no != NULL) *pos_chave_no = 2;
+        return rrn_no;
+    } 
+    else if (aux.nroChaves == 3 && chave_unica == aux.C3) {
+        if (pos_chave_no != NULL) *pos_chave_no = 3;
+        return rrn_no;
+    }
+    //é no folha?
+    if (aux.tipoNo == NEGATIVO) { 
+        if (pos_chave_no != NULL) *pos_chave_no = NEGATIVO; 
+        return rrn_no; 
+    }
+
+
+    //Continua busca recursiva
+    if (chave_unica < aux.C1) {
+        //busca subarvore 1
+        return busca_arvore(arquivo, aux.arv1, chave_unica, pos_chave_no);
+    } 
+    else if (aux.nroChaves == 1 || (aux.nroChaves >= 2 && chave_unica < aux.C2)) {
+        //busca subarvore 2
+        return busca_arvore(arquivo, aux.arv2, chave_unica, pos_chave_no);
+    } 
+    else if (aux.nroChaves == 2 || (aux.nroChaves == 3 && chave_unica < aux.C3)) {
+        //busca subarvore 3
+        return busca_arvore(arquivo, aux.arv3, chave_unica, pos_chave_no);
+    } 
+    else {
+        //busca subarvore 4
+        return busca_arvore(arquivo, aux.arv4, chave_unica, pos_chave_no);
+    }
+}
+
+
+
+
+
+
+
+
+
+
+/*Parametros: arquivo index arvore, rrn do nó atual a ser inserido, 
+                chave a ser inserida,ponteiro da chave,  chave da promoção,
+                 nó filho promovido.
+Retorna INT : 1 se houve PROMOTION
+              -1 se houve ERRO
+              0 Padrão - No PROMOTION
+Caso base : rrn-atual = -1, promove a chave
+    OBS:Inserção apenas em No Folha  E começa por uma busca. 
+    - busca a posição esperada da chave
+        - encontrou a chave? -> retorna erro de chaveduplicada -> quando pos_chave_no != de -1 
+        - SENÃO- temos o rrn esperado daquela chave.
+            - lê o nó
+            - encontra a posicao esperada da chave no nó - 1, 2, 3
+    - ret_value = insere recursivo
+        -  NO_PROMOTION ou ERRO na pilha de recursão  ?
+            - retorna NO PROMOTION  OU NEGATIVO
+        - Senão tenta inserção no nó
+            - nó tem espaço?
+                - insere ordenado
+            - nó não tem espaço?
+                - split-> cria um novo no, ordena as chaves, escreve o no_esq
+                    escreve o no_dir, promove a chave mais a esquerda do no_dir, 
+                    com filho nó_dir.
+                retorna PROMOTION
+
+*/
+int insere_arvore(FILE* arq_index, cab_indice *cabecalho, int rrn_no , int chave, 
+                    int byte_dados_chave , int *filho_promovido, int*chave_promovida, int *byte_dados_promovido){
+
+    int rrn_esperado, valor_retorno, pos_chave_no;
+    indice no_aux; 
+    if (rrn_no == NEGATIVO){
+        *chave_promovida = chave;
+        *filho_promovido = NEGATIVO;
+        *byte_dados_promovido = byte_dados_chave; 
+        return PROMOTION; 
+    }else{
+        ler_indice(arq_index, no_aux);
+        rrn_esperado = busca_arvore(arq_index, cabecalho->noRaiz, chave, &pos_chave_no);
+    }
+
+    if(pos_chave_no != NEGATIVO){
+        return NEGATIVO; //erro: chave duplicada
+    }else{
+        fseek(arq_index,calculo_byteoffset_indice(rrn_esperado) , SEEK_SET);
+        pos_chave_no
+        //- lê o nó
+        //    - encontra a posicao esperada da chave no nó - 1, 2, 3
+    }
+
+    valor_retorno = insere_arvore(arq_index, cabecalho, rrn_esperado, chave, byte_dados_chave,
+                                    *filho_promovido, *chave_promovida, *byte_dados_promovido  );
+
+    int byteoffset = calculo_byteoffset_indice(rrn_esperado);
+    fseek(arq_index, byteoffset, SEEK_SET);
+    ler_indice( arq_index, &no_aux);
+
+
+    if (valor_retorno == NO_PROMOTION || valor_retorno == NEGATIVO){
+        return valor_retorno;
+    }
+    //No tem espaço?
+    if (no_aux.nroChaves<3){
+        //insere chave na pagina 
+        //FAZER FUNCAO
+        return NO_PROMOTION;
+    }else{
+            //split 
+            //insere pagina no arquivo
+            //insere novapagina com rrn_filho_promovido no arquivo
+            return PROMOTION;
+    } 
+
+
+}
+
+
+void cria_novoNo( ){
 
 }
