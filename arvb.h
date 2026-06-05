@@ -51,7 +51,11 @@ void busca_chave(FILE *arquivo, int rrn_no, int chave_unica, int *byte_found);
 void cria_arvore(FILE* arq_dados, char*arq_index ,);
 
 
-void insere_arvore();
+void insere_arvore(FILE* arq_dados,
+                     int rrn_no , int chave,    
+                     int filho_promovido, int chave_promovida,
+                    int PROMOTION);
+                    
 void cria_novoNo();
 
 #endif
