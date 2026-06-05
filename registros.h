@@ -50,12 +50,14 @@ FILE *ler_binario(char *arqbin);
 FILE * cria_escreve_binario(char *arqbin);
 FILE* escrever_binario(char *arqbin);
 
+
 void ler_cabecalho(FILE* ponteiro_arquivo, cabecalho *reg_cab);
 void escreve_cabecalho(FILE* ponteiro_arquivo, cabecalho *reg_cab);
 
 void ler_regdados(FILE* ponteiro_arquivo, dados* reg_dados);
 void escreve_regdados(FILE *ponteiro_arquivo, dados* reg_dados);
 
+int calculo_byteoffset_dados(int RRN);
 
 
 #endif

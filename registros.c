@@ -47,6 +47,10 @@ dados cria_dados(){
 }
 
 
+int calculo_byteoffset_dados(int RRN){
+    return RRN*TAM_REG +TAM_CABECALHO;
+}
+
 /*Lê os dados do cabeçalho e coloca nas variáveis dadas
 ATENÇÃO: ponteiros deve estar bem posicionado no começo do cabeçalho, senão dá erro
 */
@@ -156,3 +160,5 @@ void escreve_regdados(FILE* ponteiro_arquivo, dados *reg_dados){
         fwrite(lixo, sizeof(char), lixo_a_escrever, ponteiro_arquivo);
     }
 }
+
+
