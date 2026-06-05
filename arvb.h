@@ -1,6 +1,5 @@
 #ifndef ARVOREB_H
 #define ARVOREB_H
-
 #include "registros.h"
 #define NEGATIVO -1
 #define TAM_CAB_IND 17
@@ -36,7 +35,7 @@ typedef struct reg_indice{
     int arv4; 
 }indice;
 
-
+indice new_indice();
 void ler_ind_cabecalho(FILE* ponteiro_arquivo, cab_indice* cab );
 void escreve_ind_cabecalho(FILE *ponteiro_arquivo, cab_indice* cab);
 
@@ -47,9 +46,12 @@ void escreve_indice(FILE *ponteiro_arquivo, indice* ind);
 
 
 
-void busca_chave(int rrn_no, int chave_unica, int *byte_chave_buscada);
+void busca_chave(FILE *arquivo, int rrn_no, int chave_unica, int *byte_found);
+
+void cria_arvore(FILE* arq_dados, char*arq_index ,);
 
 
-
+void insere_arvore();
+void cria_novoNo();
 
 #endif
