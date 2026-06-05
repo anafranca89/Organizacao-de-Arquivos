@@ -38,6 +38,15 @@ cabecalho cria_cabecalho(){
     return aux;
 }
 
+
+dados cria_dados(){
+    dados aux;
+    aux.removido = 0
+    aux.proximo = -1;
+    return aux;
+}
+
+
 /*Lê os dados do cabeçalho e coloca nas variáveis dadas
 ATENÇÃO: ponteiros deve estar bem posicionado no começo do cabeçalho, senão dá erro
 */
@@ -92,12 +101,11 @@ void ler_regdados(FILE* ponteiro_arquivo, dados* reg_dados){
 
     fread(&reg_dados->tamNomeEstacao, sizeof(int), 1, ponteiro_arquivo);
     fread(reg_dados->nomeEstacao, sizeof(char), reg_dados->tamNomeEstacao, ponteiro_arquivo);
-    //ultimo byte-- terminador da string
-    reg_dados->nomeEstacao[reg_dados->tamNomeEstacao] = '\0';
+   
 
     fread(&reg_dados->tamNomeLinha, sizeof(int), 1, ponteiro_arquivo);
     fread(reg_dados->nomeLinha, sizeof(char), reg_dados->tamNomeLinha, ponteiro_arquivo);
-    reg_dados->nomeLinha[reg_dados->tamNomeLinha] = '\0';
+   
 
     int bytes_escritos = 37 + reg_dados->tamNomeEstacao + reg_dados->tamNomeLinha;
     int lixo_a_pular = TAM_REG - bytes_escritos;
@@ -105,6 +113,12 @@ void ler_regdados(FILE* ponteiro_arquivo, dados* reg_dados){
         fseek(ponteiro_arquivo, lixo_a_pular, SEEK_CUR);
     }
 }
+
+
+
+
+
+
 
 void escreve_regdados(FILE* ponteiro_arquivo, dados *reg_dados){
     if (ponteiro_arquivo == NULL) {
