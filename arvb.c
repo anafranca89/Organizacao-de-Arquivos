@@ -161,16 +161,13 @@ void cria_arvore(FILE* arq_dados, char*arq_index ,){
         ler_regdados(arq_dados, &reg_dados);
         if (reg_dados.removido =='1') continue; // o ponteiro do fseek já está no começo do registro i+1
 
-        int PROMOTION =0, filho_promovido, chave_promovida;
+        int promotion, filho_promovido, chave_promovida;
 
-        insere_arvore(arq_dados, &index_cab, index_cab.noRaiz,  reg_dados.codEstacao,     
-                     filho_promovido,  chave_promovida,
-                     );
-            if (PROMOTION == 1){
-                cria_novoNo();
-            }
+        promotion= insere_arvore(arq_dados, &index_cab, index_cab.noRaiz,  reg_dados.codEstacao,     
+                     filho_promovido,  chave_promovida);
+            if (PROMOTION == )
+    
     }
-
 
 }
 
@@ -269,12 +266,12 @@ Retorna INT : 1 se houve PROMOTION
               -1 se houve ERRO
               0 Padrão - No PROMOTION
 Caso base : rrn-atual = -1, promove a chave
-    OBS:Inserção apenas em No Folha  E começa por uma busca. 
+    OBS:Inserção apenas em No Folha  E começa por uma busca(na raiz!:))
     - busca a posição esperada da chave
         - encontrou a chave? -> retorna erro de chaveduplicada -> quando pos_chave_no != de -1 
         - SENÃO- temos o rrn esperado daquela chave.
             - lê o nó
-            - encontra a posicao esperada da chave no nó - 1, 2, 3
+     - encontra a posicao esperada da chave no nó - 1, 2, 3
     - ret_value = insere recursivo
         -  NO_PROMOTION ou ERRO na pilha de recursão  ?
             - retorna NO PROMOTION  OU NEGATIVO
@@ -291,38 +288,56 @@ Caso base : rrn-atual = -1, promove a chave
 int insere_arvore(FILE* arq_index, cab_indice *cabecalho, int rrn_no , int chave, 
                     int byte_dados_chave , int *filho_promovido, int*chave_promovida, int *byte_dados_promovido){
 
-    int rrn_esperado, valor_retorno, pos_chave_no;
-    indice no_aux; 
+    int valor_retorno, pos_chave_no;
     if (rrn_no == NEGATIVO){
         *chave_promovida = chave;
         *filho_promovido = NEGATIVO;
         *byte_dados_promovido = byte_dados_chave; 
         return PROMOTION; 
-    }else{
-        ler_indice(arq_index, no_aux);
-        rrn_esperado = busca_arvore(arq_index, cabecalho->noRaiz, chave, &pos_chave_no);
+    }
+    if(rrn_no == cabecalho->noRaiz){
+        pos_chave_no = NEGATIVO;
+        busca_arvore(arq_index, cabecalho->noRaiz, chave, &pos_chave_no);
+        if(pos_chave_no != NEGATIVO){
+            return NEGATIVO; //erro: chave duplicada
+        }
+    }
+    
+    
+    indice no_aux; 
+    int byteoffset = calculo_byteoffset_indice(rrn_no);
+    fseek(arq_index, byteoffset, SEEK_SET);
+    ler_indice(arq_index, &no_aux);
+    
+
+    int prox_rrn = NEGATIVO;
+    if (chave < no_aux.C1) {
+        proximo_rrn = no_aux.arv1;
+    } else if (no_aux.nroChaves == 1 || 
+            (no_aux.nroChaves >= 2 && chave < no_aux.C2)) {
+        proximo_rrn = no_aux.arv2;
+    } else if (no_aux.nroChaves == 2 || 
+            (no_aux.nroChaves == 3 && chave < no_aux.C3)) {
+        proximo_rrn = no_aux.arv3;
+    } else {
+        proximo_rrn = no_aux.arv4;
     }
 
-    if(pos_chave_no != NEGATIVO){
-        return NEGATIVO; //erro: chave duplicada
-    }else{
-        fseek(arq_index,calculo_byteoffset_indice(rrn_esperado) , SEEK_SET);
-        pos_chave_no
-        //- lê o nó
-        //    - encontra a posicao esperada da chave no nó - 1, 2, 3
-    }
+
 
     valor_retorno = insere_arvore(arq_index, cabecalho, rrn_esperado, chave, byte_dados_chave,
-                                    *filho_promovido, *chave_promovida, *byte_dados_promovido  );
+                                    filho_promovido, chave_promovida, byte_dados_promovido);
 
-    int byteoffset = calculo_byteoffset_indice(rrn_esperado);
-    fseek(arq_index, byteoffset, SEEK_SET);
-    ler_indice( arq_index, &no_aux);
-
+    
 
     if (valor_retorno == NO_PROMOTION || valor_retorno == NEGATIVO){
         return valor_retorno;
     }
+
+    //seta fseek na posição correta
+    fseek(arq_index, byteoffset, SEEK_SET);
+    ler_indice(arq_index, &no_aux);
+
     //No tem espaço?
     if (no_aux.nroChaves<3){
         //insere chave na pagina 
@@ -341,4 +356,61 @@ int insere_arvore(FILE* arq_index, cab_indice *cabecalho, int rrn_no , int chave
 
 void cria_novoNo( ){
 
+}
+
+/*Sobreescreve o no de indice, para ordenar as chaves dentro dele.
+ Como ele insere no nó, é assumido que nroChaves<3.
+ Parametros: no p/sobrescerver, chave, filho dessa chave, e o ponteiro p/arquivo de dados.
+    - Se qtdChaves == 0 - insere no primeiro espaço 
+    - se qtdchaves == 1 --> 2 casos     
+                        - insere no espaço 2 
+                        - ou shifta e insere no inicio
+    - se qtdchaves ==2 --> 3 casos
+                        - insere no espaço 3
+                        - shifta tudo e insere no inicio
+                        - shifta o espaço 2 e insere no meio.
+
+*/
+
+void insere_ordenado_no(indice *no, int chave, int filho_promovido,  int byte_ponteiro){
+    if(no->nroChaves == 0){
+        no->C1 = chave;
+        no->Pr1 = byte_ponteiro;
+        no->arv2 = filho_promovido;
+        no->nroChaves = 1;
+    }
+    if (no->nroChaves == 1) {
+        if(chave > no->C1){
+            no->C2 = chave;
+            no->Pr2 = byte_ponteiro;
+            no->arv3 = filho_promovido;
+        }else{
+            //shifta e insere no começo do no
+            no->C2 = no->C1;
+            no->Pr2 = no->Pr1;
+            no->arv3 = no->arv2;
+            no->arv2 = filho_promovido;
+            
+            no->C1 = chave;
+            no->Pr1 = byte_ponteiro;
+        }
+        no->nroChaves = 2;
+    }if (no->nroChaves == 2) {
+        if(chave >no->C2){
+            no->C3 = chave;
+            no->Pr3 = byte_ponteiro;
+            no->arv4= filho_promovido;
+        }else if (chave > no->C1){
+            // shifta 
+            no->C3 = no->C2;
+            no->Pr3= no->Pr2;
+            no->arv4 = no->arv3;
+            //insere no meio
+            no->C2 = chave;
+            no->Pr2 = byte_ponteiro;
+            no->arv3 = filho_promovido;
+        }
+        no->nroChaves = 3;
+    }
+    
 }

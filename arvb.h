@@ -56,9 +56,9 @@ void cria_arvore(FILE* arq_dados, char*arq_index ,);
 
 int insere_arvore(FILE* arq_dados,
                      int rrn_no , int chave,    
-                     int filho_promovido, int chave_promovida
-                    /*int PROMOTION*/);
+                     int filho_promovido, int chave_promovida);
                     
 void cria_novoNo();
+void insere_ordenado_no(indice *no, int chave, int filho_promovido,  int byte_ponteiro);
 
 #endif
