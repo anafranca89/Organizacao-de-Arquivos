@@ -4,6 +4,24 @@
 #include "registros.h"
 #include "funcHash.h"
 
+
+
+
+// Formula para criação da chave hash 
+int hash_string(char *str, int tam, int primo) {
+    int soma = 0;
+
+    for (int i = 0; i < tam; i++) {
+        soma += (unsigned char) str[i];
+    }
+
+    return soma % primo;
+}
+
+
+
+
+
 /*Estrutura escolhida para auxiliar na busca de string foi por tabela Hash. 
 Se o tamnaho das strings é >0 insere na tabela hash.*/
 void carregar_nomes_no_hash(FILE *bin, NoHash *tabela[]) {
@@ -38,27 +56,12 @@ void carregar_nomes_no_hash(FILE *bin, NoHash *tabela[]) {
 
 
 
-
-
-
-
-
-// Formula para criação da chave hash 
-int hash_string(char *str, int tam, int primo) {
-    int soma = 0;
-
-    for (int i = 0; i < tam; i++) {
-        soma += (unsigned char) str[i];
+//Inicialização da tabela Hash
+void inicializar_tabela(NoHash *tabela[]) {
+    for (int i = 0; i < TAM_TABELA; i++) {
+        tabela[i] = NULL;
     }
-
-    return soma % primo;
 }
-
-
-
-
-
-
 
 
 void liberar_tabela(NoHash *tabela[]) {
@@ -74,19 +77,6 @@ void liberar_tabela(NoHash *tabela[]) {
         tabela[i] = NULL;
     }
 }
-
-
-
-
-
-
-//Inicialização da tabela Hash
-void inicializar_tabela(NoHash *tabela[]) {
-    for (int i = 0; i < TAM_TABELA; i++) {
-        tabela[i] = NULL;
-    }
-}
-
 
 
 

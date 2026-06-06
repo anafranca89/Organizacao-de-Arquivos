@@ -16,5 +16,7 @@ typedef struct no_hash {
 void inicializar_tabela(NoHash *tabela[]);
 void liberar_tabela(NoHash *tabela[]);
 void inserir_hash(NoHash *tabela[], char *nomeLinha, int tamNomeLinha);
+void carregar_nomes_no_hash(FILE *bin, NoHash *tabela[]);
 NoHash* buscar_hash(NoHash *tabela[], char *nomeLinha, int tamNomeLinha);
+
 
