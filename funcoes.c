@@ -60,10 +60,7 @@ void carregar_nomes_no_hash(FILE *bin, NoHash *tabela[]) {
     ler_cabecalho(bin, &status, &topo, &proxRRN, &nroEstacoes, &nroParesEstacoes);
 
     for (rrn = 0; rrn < proxRRN; rrn++) {
-        ler_regdados(bin, &removido, &proximo, &codEstacao, &codLinha,
-                     &codProxEstacao, &distProxEstacao, &codLinhaIntegra,
-                     &codEstIntegra, &tamNomeEstacao, nomeEstacao,
-                     &tamNomeLinha, nomeLinha);
+        ler_regdados(bin, );
 
         if (removido == '1')
             continue;
@@ -215,10 +212,7 @@ void buscar_registros(FILE *bin, NoHash *tabela[], int m,
     for (rrn = 0; rrn < proxRRN; rrn++) {
         int ok = 1;
         
-        ler_regdados(bin, &removido, &proximo, &codEstacao, &codLinha,
-                     &codProxEstacao, &distProxEstacao, &codLinhaIntegra,
-                     &codEstIntegra, &tamNomeEstacao, nomeEstacao,
-                     &tamNomeLinha, nomeLinha);
+        ler_regdados(bin,);
 
         if (removido == '1')
             continue;
@@ -539,18 +533,8 @@ void adicionar_csv_no_binario(FILE *csv, FILE *bin, NoHash *tabela[]) {
 */
 void mostrar_binario_sequencial(FILE *bin){
     // Cria um registro temporário para ler os dados do arquivo
-    char status;
-    int topo, proxRRN, nroEstacoes, nroParesEstacoes;
-
-    char removido;
-    int proximo;
-    int codEstacao, codLinha, codProxEstacao, distProxEstacao;
-    int codLinhaIntegra, codEstIntegra;
-    int tamNomeEstacao, tamNomeLinha;
-
-    char nomeEstacao[200];
-    char nomeLinha[200];
-
+    cabecalho reg_cab ;
+    dados reg_dados;
     int i;
 
     if(bin == NULL){
@@ -560,45 +544,30 @@ void mostrar_binario_sequencial(FILE *bin){
 
     // Posiciona a leitura no inicio do arquivo e le o registro de cabeçalho
     fseek(bin, 0, SEEK_SET);
-    ler_cabecalho(bin, &status, &topo, &proxRRN, &nroEstacoes, &nroParesEstacoes);
-    if (proxRRN == 0 || nroEstacoes == 0) {
-            //Nao existem registros
-            printf("Registro inexistente.\n");
-    return;
+    ler_cabecalho(bin, &reg_cab);
+    if (reg_cab.proxRRN == 0 || reg_cab.nroEstacoes == 0) {
+        printf("Registro inexistente.\n");
+        return;
     }
-    if(status != '1'){
-        // O status é diferente de 1, indica inconsistencia de dados.
+    if(reg_cab.status != '1'){
         printf("Falha no processamento do arquivo.\n");
         return;
     }
-
-    for(i = 0; i < proxRRN; i++){
-        ler_regdados(bin,
-                     &removido,
-                     &proximo,
-                     &codEstacao,
-                     &codLinha,
-                     &codProxEstacao,
-                     &distProxEstacao,
-                     &codLinhaIntegra,
-                     &codEstIntegra,
-                     &tamNomeEstacao,
-                     nomeEstacao,
-                     &tamNomeLinha,
-                     nomeLinha);
-        // Se o registro está marcado como removido, não imprime
-        if(removido == '1') continue;
-
-        // Registro não removido - Usa as funções auxilares para imprimir inteiro ou string
-        imprime_inteiro_ou_nulo(codEstacao);
-        imprime_texto_ou_nulo(nomeEstacao, tamNomeEstacao);
-        imprime_inteiro_ou_nulo(codLinha);
-        imprime_texto_ou_nulo(nomeLinha, tamNomeLinha);
-        imprime_inteiro_ou_nulo(codProxEstacao);
-        imprime_inteiro_ou_nulo(distProxEstacao);
-        imprime_inteiro_ou_nulo(codLinhaIntegra);
-        imprime_inteiro_ou_nulo(codEstIntegra);
-        printf("\n");
     
+    for(i = 0; i < reg_cab.proxRRN; i++){
+        fseek(bin, calculo_byteoffset_dados(i), SEEK_SET);
+        ler_regdados(bin, &reg_dados);
+
+        if(reg_dados.removido == '1') continue;
+
+        imprime_inteiro_ou_nulo(reg_dados.codEstacao);
+        imprime_texto_ou_nulo(reg_dados.nomeEstacao, reg_dados.tamNomeEstacao);
+        imprime_inteiro_ou_nulo(reg_dados.codLinha);
+        imprime_texto_ou_nulo(reg_dados.nomeLinha, reg_dados.tamNomeLinha);
+        imprime_inteiro_ou_nulo(reg_dados.codProxEstacao);
+        imprime_inteiro_ou_nulo(reg_dados.distProxEstacao);
+        imprime_inteiro_ou_nulo(reg_dados.codLinhaIntegra);
+        imprime_inteiro_ou_nulo(reg_dados.codEstIntegra);
+        printf("\n");
     }
 }
