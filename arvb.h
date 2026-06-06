@@ -1,7 +1,6 @@
 #ifndef ARVOREB_H
 #define ARVOREB_H
 #include "registros.h"
-#define NEGATIVO -1
 #define TAM_CAB_IND 17
 #define TAM_REG_IND 53
 #define PROMOTION 1
@@ -11,7 +10,7 @@
 //Para isso precisamos do arquivo de indices e struct de indices.
 
 
-typedef struct reg_cabecalho{
+typedef struct reg_cab_indice{
     char status;
     int noRaiz;
     int topo;
@@ -39,6 +38,7 @@ typedef struct reg_indice{
 }indice;
 
 indice new_indice();
+
 void ler_ind_cabecalho(FILE* ponteiro_arquivo, cab_indice* cab );
 void escreve_ind_cabecalho(FILE *ponteiro_arquivo, cab_indice* cab);
 
@@ -49,16 +49,17 @@ void escreve_indice(FILE *ponteiro_arquivo, indice* ind);
 
 int calculo_byteoffset_indice(int RRN);
 
-int busca_arvore(FILE *arquivo, int rrn_no, int chave_unica);
+int busca_arvore(FILE *arquivo, int rrn_no, int chave_unica, int *posicao_chave_no);
 
-void cria_arvore(FILE* arq_dados, char*arq_index ,);
+void cria_arvore(FILE* arq_dados, char*arq_index );
 
 
-int insere_arvore(FILE* arq_dados,
-                     int rrn_no , int chave,    
-                     int filho_promovido, int chave_promovida);
+int insere_arvore(FILE* arq_index, cab_indice *cabecalho, int rrn_no, int chave, 
+                  int byte_dados_chave, int *filho_promovido, int *chave_promovida, int *byte_dados_promovido);
                     
 void cria_novoNo();
 void insere_ordenado_no(indice *no, int chave, int filho_promovido,  int byte_ponteiro);
-
+void split (FILE *arq_index, cab_indice *cab_ind, int rrn_no_ant, indice *no_ant, 
+           int chave, int byte_chave, int filho_chave,
+           int *chave_promovida, int *byte_promovido, int *filho_promovido );
 #endif

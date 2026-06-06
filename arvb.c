@@ -30,10 +30,10 @@ void ler_ind_cabecalho(FILE* ponteiro_arquivo, cab_indice* cab ){
         return;
     }
     fread(&cab->status, sizeof(char), 1, ponteiro_arquivo);
-    fread(&cab->.noRaiz, sizeof(int), 1, ponteiro_arquivo);
-    fread(&cab->.topo, sizeof(int), 1, ponteiro_arquivo);
-    fread(&cab->.proxRRN, sizeof(int), 1, ponteiro_arquivo);
-    fread(&cab->.nroNos, sizeof(int), 1, ponteiro_arquivo);
+    fread(&cab->noRaiz, sizeof(int), 1, ponteiro_arquivo);
+    fread(&cab->topo, sizeof(int), 1, ponteiro_arquivo);
+    fread(&cab->proxRRN, sizeof(int), 1, ponteiro_arquivo);
+    fread(&cab->nroNos, sizeof(int), 1, ponteiro_arquivo);
 }
 
 
@@ -140,18 +140,24 @@ void cria_arvore(FILE* arq_dados, char*arq_index ){
 
     FILE* indexes = escrever_binario( arq_index);
     cab_indice index_cab = new_cab_indice();
+
+    
     if(indexes == NULL){
         indexes = cria_escreve_binario(arq_index);
         // escrita inicial - status inconsistente
         index_cab.status = '0';
         escreve_ind_cabecalho(indexes, &index_cab);
+    }else{
+        ler_ind_cabecalho(indexes, &index_cab);
+        index_cab.status = '0';
+        fseek(indexes, 0, SEEK_SET);
+        escreve_ind_cabecalho(indexes, &index_cab);
     }
-    ler_ind_cabecalho(indexes, &index_cab);
 
 
     //ler o arquivo de dados
     cabecalho reg_cab_dados = cria_cabecalho();
-    ler_cabecalho(arq_dados, reg_cab_dados);
+    ler_cabecalho(arq_dados, &reg_cab_dados);
 
     if(reg_cab_dados.status == 0){
         //status inconsistente ? --> Erro 
@@ -171,7 +177,13 @@ void cria_arvore(FILE* arq_dados, char*arq_index ){
         // é removido?
         ler_regdados(arq_dados, &reg_dados);
         if (reg_dados.removido =='1') continue; // o ponteiro do fseek já está no começo do registro i+1
+        int pos_chave_no = NEGATIVO;
+        busca_arvore(indexes, index_cab.noRaiz, reg_dados.codEstacao, &pos_chave_no);
 
+        if (pos_chave_no != NEGATIVO) {
+            continue; 
+        }
+        //chave é unica - nao duplicada
         int filho_promovido, chave_promovida, byte_dados_promovido;
 
         int retorno_prom = insere_arvore(indexes, &index_cab, index_cab.noRaiz,  reg_dados.codEstacao, byteoffset_dados,     
@@ -180,25 +192,25 @@ void cria_arvore(FILE* arq_dados, char*arq_index ){
         if (retorno_prom == PROMOTION ){
             //atualiza o tipo do no da raiz antiga --- importante pra busca!
             int rrn_raiz_antiga = index_cab.noRaiz;
-            int byte_raiz_antiga = calculo_byteoffset_indice(rrn_raiz_antiga);
-            
-            indice raiz_antiga;
-            fseek(indexes, byte_raiz_antiga, SEEK_SET);
-            ler_indice(indexes, &raiz_antiga);
-            
 
-            if (index_cab.nroNos == 1) {
-                //SE só existia 1 no, vira nó folha
-                raiz_antiga.tipoNo = NEGATIVO; 
-            } else {
-                //senão vira no intermediario
-                raiz_antiga.tipoNo = 1; 
+            //se a arvore n estava vazia, atualiza a raiz
+            if(rrn_raiz_antiga != NEGATIVO){
+                int byte_raiz_antiga = calculo_byteoffset_indice(rrn_raiz_antiga);
+                indice raiz_antiga;
+                fseek(indexes, byte_raiz_antiga, SEEK_SET);
+                ler_indice(indexes, &raiz_antiga);
+
+                if (raiz_antiga.arv1 == NEGATIVO) {
+                    raiz_antiga.tipoNo = NEGATIVO; // Se não tem filhos, vira folha
+                } else {
+                    raiz_antiga.tipoNo = 1;        // Se tem filhos, vira intermediario
+                }
+            
+                fseek(indexes, byte_raiz_antiga, SEEK_SET);
+                escreve_indice(indexes, &raiz_antiga);
             }
-        
-            fseek(indexes, byte_raiz_antiga, SEEK_SET);
-            escreve_indice(indexes, &raiz_antiga);
-
-
+            
+            // Cria nova raiz
             indice nova_raiz = new_indice();
         
             nova_raiz.tipoNo = 0; 
@@ -210,21 +222,11 @@ void cria_arvore(FILE* arq_dados, char*arq_index ){
             // O filho esq é a raiz antiga - o filho_dir é o gerado no split
             nova_raiz.arv1 = index_cab.noRaiz;
             nova_raiz.arv2 = filho_promovido;
-            nova_raiz.arv3 = NEGATIVO;
-            nova_raiz.arv4 = NEGATIVO;
-
-            nova_raiz.C2 = NEGATIVO;
-            nova_raiz.C3 = NEGATIVO;
-
-            nova_raiz.Pr2 = NEGATIVO;
-            nova_raiz.Pr3 = NEGATIVO;
             
 
-            // Aloca a nova página no fim do arquivo de índices (no proxRRN atual)
             int rrn_nova_raiz = index_cab.proxRRN;
-            int byte_new_raiz = calculo_byteoffset_indice(rrn_nova_raiz);
             
-            fseek(indexes, byte_new_raiz, SEEK_SET);
+            fseek(indexes, calculo_byteoffset_indice(rrn_nova_raiz), SEEK_SET);
             escreve_indice(indexes, &nova_raiz);
             
             // atualiza o cabeçalho
@@ -272,7 +274,7 @@ Retorna : RRN do nó onde a busca terminou --> -1 se não existe a chave
 */
 int busca_arvore(FILE *arquivo, int rrn_no, int chave_unica, int *pos_chave_no){
     if(rrn_no==NEGATIVO){
-        if (pos_chave != NULL) *pos_chave_no = NEGATIVO;
+        if (pos_chave_no != NULL) *pos_chave_no = NEGATIVO;
         return NEGATIVO;
     } 
     indice aux;
@@ -387,20 +389,20 @@ int insere_arvore(FILE* arq_index, cab_indice *cabecalho, int rrn_no , int chave
 
     int prox_rrn = NEGATIVO;
     if (chave < no_aux.C1) {
-        proximo_rrn = no_aux.arv1;
+        prox_rrn = no_aux.arv1;
     } else if (no_aux.nroChaves == 1 || 
             (no_aux.nroChaves >= 2 && chave < no_aux.C2)) {
-        proximo_rrn = no_aux.arv2;
+        prox_rrn = no_aux.arv2;
     } else if (no_aux.nroChaves == 2 || 
             (no_aux.nroChaves == 3 && chave < no_aux.C3)) {
-        proximo_rrn = no_aux.arv3;
+        prox_rrn = no_aux.arv3;
     } else {
-        proximo_rrn = no_aux.arv4;
+        prox_rrn = no_aux.arv4;
     }
 
 
 
-    valor_retorno = insere_arvore(arq_index, cabecalho, rrn_esperado, chave, byte_dados_chave,
+    valor_retorno = insere_arvore(arq_index, cabecalho, prox_rrn, chave, byte_dados_chave,
                                     filho_promovido, chave_promovida, byte_dados_promovido);
 
     
@@ -415,7 +417,9 @@ int insere_arvore(FILE* arq_index, cab_indice *cabecalho, int rrn_no , int chave
 
     //No tem espaço?
     if (no_aux.nroChaves<3){
-        insere_ordenado_no(&no, chave, filho_promovido, byte_dados_chave);
+        insere_ordenado_no(&no_aux, *chave_promovida, *filho_promovido, *byte_dados_promovido);
+        fseek(arq_index, byteoffset, SEEK_SET);
+        escreve_indice(arq_index, &no_aux);
         return NO_PROMOTION;
     }else{
         int nova_chave_promovida, novo_byte_promovido, novo_filho_promovido;
@@ -434,9 +438,6 @@ int insere_arvore(FILE* arq_index, cab_indice *cabecalho, int rrn_no , int chave
 }
 
 
-void cria_novoNo( ){
-
-}
 
 
 /*Sobreescreve o no de indice, para ordenar as chaves dentro dele.
@@ -457,8 +458,7 @@ void insere_ordenado_no(indice *no, int chave, int filho_promovido,  int byte_po
         no->Pr1 = byte_ponteiro;
         no->arv2 = filho_promovido;
         no->nroChaves = 1;
-    }
-    if (no->nroChaves == 1) {
+    }else if (no->nroChaves == 1) {
         if(chave > no->C1){
             no->C2 = chave;
             no->Pr2 = byte_ponteiro;
@@ -474,7 +474,7 @@ void insere_ordenado_no(indice *no, int chave, int filho_promovido,  int byte_po
             no->Pr1 = byte_ponteiro;
         }
         no->nroChaves = 2;
-    }if (no->nroChaves == 2) {
+    }else if (no->nroChaves == 2) {
         if(chave >no->C2){
             no->C3 = chave;
             no->Pr3 = byte_ponteiro;
@@ -488,6 +488,19 @@ void insere_ordenado_no(indice *no, int chave, int filho_promovido,  int byte_po
             no->C2 = chave;
             no->Pr2 = byte_ponteiro;
             no->arv3 = filho_promovido;
+        }else{
+            //shifta tudo e insere no inicio
+            no->C3 = no->C2;
+            no->Pr3 = no->Pr2;
+            no->arv4 = no->arv3;
+
+            no->C2 = no->C1;
+            no->Pr2 = no->Pr1;
+            no->arv3 = no->arv2;
+            no->arv2 = filho_promovido;
+
+            no->C1 = chave;
+            no->Pr1 = byte_ponteiro;
         }
         no->nroChaves = 3;
     }
@@ -515,17 +528,17 @@ void split (FILE *arq_index, cab_indice *cab_ind, int rrn_no_ant, indice *no_ant
     int byte_temp[4];
     int arv_temp[5];
 
-    chaves_temp[0] = no_antigo->C1; byte_temp[0] = no_antigo->Pr1;
-    chaves_temp[1] = no_antigo->C2; byte_temp[1] = no_antigo->Pr2;
-    chaves_temp[2] = no_antigo->C3; byte_temp[2] = no_antigo->Pr3;
+    chaves_temp[0] = no_ant->C1; byte_temp[0] = no_ant->Pr1;
+    chaves_temp[1] = no_ant->C2; byte_temp[1] = no_ant->Pr2;
+    chaves_temp[2] = no_ant->C3; byte_temp[2] = no_ant->Pr3;
 
-    arv_temp[0] = no_antigo->arv1;
-    arv_temp[1] = no_antigo->arv2;
-    arv_temp[2] = no_antigo->arv3;
-    arv_temp[3] = no_antigo->arv4;
+    arv_temp[0] = no_ant->arv1;
+    arv_temp[1] = no_ant->arv2;
+    arv_temp[2] = no_ant->arv3;
+    arv_temp[3] = no_ant->arv4;
 
     int i = 2;
-    while (i >= 0 && chave_promovida_sub < chaves_temp[i]) {
+    while (i >= 0 && chave < chaves_temp[i]) {
         //shift os elementos para 'liberar' o espaço p/ chave inserida
         chaves_temp[i + 1] = chaves_temp[i];
         byte_temp[i + 1] = byte_temp[i];
@@ -538,7 +551,20 @@ void split (FILE *arq_index, cab_indice *cab_ind, int rrn_no_ant, indice *no_ant
     arv_temp[i + 2] = filho_chave;
 
     indice novo_no = new_indice();
-    novo_no.tipoNo = no_ant->tipoNo; 
+
+    //qual é o tipo do novo no?
+    if (no_ant->tipoNo == 0) {
+        if (no_ant->arv1 == NEGATIVO) {
+            no_ant->tipoNo = NEGATIVO;  // Vira folha
+            novo_no.tipoNo = NEGATIVO;  // Vira folha
+        } else {
+            no_ant->tipoNo = 1;         // Vira intermediário
+            novo_no.tipoNo = 1;         // Vira intermediário
+        }
+    } else {
+        // Se não era raiz o novo nó  mantém o mesmo do antigo
+        novo_no.tipoNo = no_ant->tipoNo;
+    }
 
 
     int rrn_novo_no = cab_ind->proxRRN;
@@ -557,11 +583,11 @@ void split (FILE *arq_index, cab_indice *cab_ind, int rrn_no_ant, indice *no_ant
     novo_no.C3 = NEGATIVO;
 
 
-    no_ant->Pr1 = byte_chave[0];
-    no_ant->Pr2 = byte_chave[1];
+    no_ant->Pr1 = byte_temp[0];
+    no_ant->Pr2 = byte_temp[1];
     no_ant->Pr3 = NEGATIVO;// limpa os dados anteriores
-    //novono  byte promovido -> byte_chave[2];
-    novo_no.Pr1 = byte_chave[3];
+    //novono  byte promovido -> byte_temp[2];
+    novo_no.Pr1 = byte_temp[3];
     novo_no.Pr2 = NEGATIVO;
     novo_no.Pr3 = NEGATIVO;
 
@@ -573,18 +599,22 @@ void split (FILE *arq_index, cab_indice *cab_ind, int rrn_no_ant, indice *no_ant
     //novo_no filho promovido = rrn do novo no
     novo_no.arv1 = arv_temp[3];
     novo_no.arv2 = arv_temp[4];
-    no_novo.arv3 = NEGATIVO;
-    no_novo.arv4 = NEGATIVO;
+    novo_no.arv3 = NEGATIVO;
+    novo_no.arv4 = NEGATIVO;
 
     no_ant->nroChaves = 2;
     novo_no.nroChaves =1;
+
+    *chave_promovida = chaves_temp[2];
+    *byte_promovido = byte_temp[2];
+    *filho_promovido = rrn_novo_no;
 
     //reescreve os nós 
     fseek(arq_index, calculo_byteoffset_indice(rrn_no_ant), SEEK_SET);
     escreve_indice(arq_index, no_ant);
 
     fseek(arq_index, calculo_byteoffset_indice(rrn_novo_no), SEEK_SET);
-    escreve_indice(arq_index, &no_novo);
+    escreve_indice(arq_index, &novo_no);
 
     cab_ind->proxRRN++;
     cab_ind->nroNos++;

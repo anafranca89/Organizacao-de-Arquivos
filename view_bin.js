@@ -1,4 +1,4 @@
-// 1. O Gatekeeper: Aceita qualquer arquivo .bin para a extensão abrir
+
 registerFileType((fileExt, filePath) => {
     return fileExt === 'bin';
 });
@@ -24,7 +24,7 @@ registerParser((filePath) => {
     let nome = filePath.toLowerCase();
 
     // ROTEAMENTO: Se o nome contiver "indice" ou "arv", desenha a Árvore B
-    if (nome.includes('indice') || nome.includes('arv')) {
+    if (nome.includes('indice') || nome.includes('arv')|| nome.includes('tree')) {
         
         // ==========================================
         // PARSER DA ÁRVORE-B (53 bytes)
@@ -32,10 +32,10 @@ registerParser((filePath) => {
         read(1); addRow('status', getStringValue(), '0 inconsistente, 1 consistente');
         read(4); addRow('noRaiz', getSignedNumberValue(), 'RRN do nó raíz');
         read(4); addRow('topo', getSignedNumberValue(), 'topo da pilha de removidos');    
-        read(4); addRow('proxRRN', getSignedNumberValue(), '');
+        read(4); let proxRRN = getSignedNumberValue();addRow('proxRRN', getSignedNumberValue(), '');
         read(4); let nroNos = getSignedNumberValue(); addRow('nroNos', nroNos, '');
 
-        for (let i = 0; i < nroNos; i++) {
+        for (let i = 0; i < proxRRN; i++) {
             read(53);
             addRow(`Nó da Árvore (RRN ${i})`, '');
             addDetails(() => {
