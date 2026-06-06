@@ -4,18 +4,8 @@
 
 #define TAM_REG 80
 #define TAM_CABECALHO 17
+#define NEGATIVO -1
 
-void ler_cabecalho(FILE* ponteiro_arquivo, char *status, int *topo, int *proxRRN, int *nroEstacoes, int *nroParesEstacoes){
-    if (ponteiro_arquivo == NULL) {
-        printf("Falha no processamento do arquivo.\n"); 
-        return;
-    }
-    fread(status, sizeof(char), 1, ponteiro_arquivo);
-    fread(topo, sizeof(int), 1, ponteiro_arquivo);
-    fread(proxRRN, sizeof(int), 1, ponteiro_arquivo);
-    fread(nroEstacoes, sizeof(int), 1, ponteiro_arquivo);
-    fread(nroParesEstacoes, sizeof(int), 1, ponteiro_arquivo);
-}
 typedef struct reg_cabecalho{
     char status;
     int topo;
@@ -23,6 +13,7 @@ typedef struct reg_cabecalho{
     int nroEstacoes;
     int nroParesEstacoes;
 }cabecalho;
+
 
 typedef struct reg_dados{
     char removido; 
@@ -36,10 +27,11 @@ typedef struct reg_dados{
     int tamNomeEstacao; 
     /*espaço de 50 - suficiente para o pior caso, onde apenas uma das strings ocupa os 
     80 - 37 = 43 bytes restantes */
-    char nomeEstacao[50];
+    char nomeEstacao[51];
     int tamNomeLinha;
-    char nomeLinha[50]; 
+    char nomeLinha[51]; 
 }dados;
+
 
 
 //construtores
@@ -59,5 +51,8 @@ void escreve_regdados(FILE *ponteiro_arquivo, dados* reg_dados);
 
 int calculo_byteoffset_dados(int RRN);
 
+void imprime_inteiro_ou_nulo(int valor);
+void imprime_texto_ou_nulo(char *texto, int tamanho);
+void imprime_registro_dados(dados* reg_dados);
 
 #endif
