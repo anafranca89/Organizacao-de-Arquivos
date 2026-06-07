@@ -209,6 +209,13 @@ void mostrar_binario_sequencial(FILE *bin){
 
 
 
+ /* 
+    insere um registro usando o conceito de pilha de rns dos removidos ensinado em aula,
+    isto é, apenas marca como logicamente removido.
+    
+    Parâmetros:  arquivo de dados, Tabela Hash, 
+
+*/
 
 
 
@@ -260,6 +267,10 @@ void ler_e_inserir_registro(FILE *bin, NoHash *tabela[], cabecalho *reg_cabecalh
  /* 
     insere um registro usando o conceito de pilha de rns dos removidos ensinado em aula,
     isto é, apenas marca como logicamente removido.
+
+    Parâmetros:  arquivo de dados, Tabela Hash, qtd de campos a serem verificados,
+                nomedos campos, valor dos campos.
+
 */
 
 void remover_registros_dinamico(FILE *bin, NoHash *tabela[], int m,
