@@ -212,7 +212,7 @@ void mostrar_binario_sequencial(FILE *bin){
 
 
 
-void ler_e_inserir_registro(FILE *bin, NoHash *tabela[]) {
+void ler_e_inserir_registro(FILE *bin, NoHash *tabela[], cabecalho *reg_cabecalho) {
 
     dados reg_dados;
     memset(&reg_dados, 0, sizeof(dados));
@@ -220,7 +220,7 @@ void ler_e_inserir_registro(FILE *bin, NoHash *tabela[]) {
     char strCodEstacao[50], strCodLinha[50], strCodProxEstacao[50], strDistProxEstacao[50];
     char strCodLinhaIntegra[50], strCodEstIntegra[50];
 
-    // 1. Faz a leitura sequencial de todos os campos via teclado
+    // Faz a leitura sequencial de todos os campos 
     scanf("%s", strCodEstacao);
     ScanQuoteString(reg_dados.nomeEstacao);
     scanf("%s", strCodLinha);
@@ -246,7 +246,7 @@ void ler_e_inserir_registro(FILE *bin, NoHash *tabela[]) {
    reg_dados.removido = '0';
     reg_dados.proximo = -1;
 
-    inserir_registro_dinamico(bin, tabela, &reg_dados);
+    inserir_registro_dinamico(bin, tabela, reg_cabecalho, &reg_dados);
 }
 
 
@@ -348,50 +348,46 @@ void remover_registros_dinamico(FILE *bin, NoHash *tabela[], int m,
 
 
 
-void inserir_registro_dinamico(FILE *bin, NoHash *tabela[], dados *reg_dados){
+void inserir_registro_dinamico(FILE *bin, NoHash *tabela[], cabecalho *cab, dados *reg_dados){
 	
 	
-	cabecalho cab;
 	long offset_insercao;
     int rrn_insercao;
     
-    if (bin == NULL) {
+    if (bin == NULL || cab == NULL) {
         printf("Falha no processamento do arquivo.\n");
         return;
     }
-	ler_cabecalho(bin, &cab);
 
-
-	cab.status = '0';
-    fseek(bin, 0, SEEK_SET);
-    escreve_cabecalho(bin, &cab);
 
     if (reg_dados->tamNomeEstacao> 0) {
         NoHash *h = buscar_hash(tabela, reg_dados->nomeEstacao, reg_dados->tamNomeEstacao);
         
         if (h == NULL) {
-            cab.nroEstacoes++;
+            cab->nroEstacoes++;
         }
 
         inserir_hash(tabela, reg_dados->nomeEstacao, reg_dados->tamNomeEstacao);
     }
     if (reg_dados->codProxEstacao != -1) {
-        cab.nroParesEstacoes++;
+        cab->nroParesEstacoes++;
     }
 
-	 if (cab.topo != -1) {
-        rrn_insercao = cab.topo;
+	 if (cab->topo != -1) {
+        rrn_insercao = cab->topo;
         offset_insercao= calculo_byteoffset_dados(rrn_insercao);
         
         fseek(bin, offset_insercao + 1, SEEK_SET);
         int proximo_rrn_topo;
-		fread(&proximo_rrn_topo, sizeof(int), 1, bin);
-        
-        cab.topo = proximo_rrn_topo;
+		if (fread(&proximo_rrn_topo, sizeof(int), 1, bin) == 1) {
+            cab->topo = proximo_rrn_topo;
+        } else {
+            cab->topo = -1;
+        }
     } else {
-        rrn_insercao = cab.proxRRN;
+        rrn_insercao = cab->proxRRN;
         offset_insercao = calculo_byteoffset_dados(rrn_insercao);
-        cab.proxRRN++;
+        cab->proxRRN++;
     }
 
 	reg_dados->removido ='0';
@@ -400,10 +396,7 @@ void inserir_registro_dinamico(FILE *bin, NoHash *tabela[], dados *reg_dados){
 	fseek(bin, offset_insercao, SEEK_SET);
     escreve_regdados(bin, reg_dados);
 	
-	// volta a colocar o arquivo como funcional
-	cab.status = '1';
-	fseek(bin, 0, SEEK_SET);
-	escreve_cabecalho(bin, &cab);
+	
 
 
 }
@@ -457,7 +450,7 @@ void atualizar_registros_dinamico(FILE *bin, NoHash *tabela[],
         return;
     }
 
-	while (rrn_atual < reg_cab.proxRRN && !feof(bin)) {
+	while (rrn_atual <reg_cab.proxRRN && !feof(bin)) {
 
         ler_regdados(bin, &reg_dados);
         
