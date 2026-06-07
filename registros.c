@@ -3,7 +3,8 @@
 #include <stdlib.h>
 #include "registros.h"
 
-/*Funções para o ARQUIVO BINÁRIO DE SAÍDA. Retornam o ponteiro de arquivo  fopen!
+/*
+Retornam o ponteiro de arquivo  fopen!
     Apenas lê ->rb
 */
 FILE * ler_binario(char *arqbin){
@@ -15,7 +16,7 @@ FILE * ler_binario(char *arqbin){
 }
 
 /* Retorna o ponteiro FILE.
-    Cria do zero no modo escrita.
+    Cria do zero no modo escrita. ->wb+
     Nao use se o arquivo existir!
 */
 FILE * cria_escreve_binario(char *arqbin){
@@ -27,6 +28,7 @@ FILE * cria_escreve_binario(char *arqbin){
 }
 
 /*Abre no modo escrita binário.
+modo -> rb+
 Apenas se o arquivo já existe!.
 */
 FILE * escrever_binario(char *arqbin){
@@ -39,7 +41,10 @@ FILE * escrever_binario(char *arqbin){
 }
 
 
-
+/*Função que une abrir p/ escrita.
+Se o arquivo existe retorna ele.
+Senao, cria e retorna.
+*/
 
 FILE* abrir_para_escrita_binário(char *nome_arquivo) {
     if (nome_arquivo == NULL) return NULL;
@@ -47,13 +52,16 @@ FILE* abrir_para_escrita_binário(char *nome_arquivo) {
     FILE *arq = escrever_binario(nome_arquivo);
     if (arq == NULL) {
         arq = cria_escreve_binario(nome_arquivo);
-        cabecalho cab = cria_cabecalho();
-        escreve_cabecalho(arq,&cab);
+        /* cabecalho cab = cria_cabecalho();
+        escreve_cabecalho(arq,&cab); */
     }
 
     return arq;
 }
 
+/* Construtor do Reg.Cabeçalho de Dados.
+    Retorna a struct cabeçalho com os valores padrão de  NULOS.
+*/
 cabecalho cria_cabecalho(){
     cabecalho aux;
     aux.status = 0;
@@ -64,7 +72,10 @@ cabecalho cria_cabecalho(){
     return aux;
 }
 
-
+/*  
+    Construtor do Reg.Dados de Dados.
+    Retorna a struct dados com os valores padrão p/Nulo.
+*/
 dados cria_dados(){
     dados aux;
     aux.removido = '0';
@@ -74,13 +85,20 @@ dados cria_dados(){
     return aux;
 }
 
-
+/*  
+    Função auxiliar p/ modulsrizar o
+    calculo do byteoffset do registro de dados.
+    Retorna o int dele.
+*/
 int calculo_byteoffset_dados(int RRN){
     return RRN*TAM_REG +TAM_CABECALHO;
 }
 
-/*Lê os dados do cabeçalho e coloca nas variáveis dadas
-ATENÇÃO: ponteiros deve estar bem posicionado no começo do cabeçalho, senão dá erro
+
+
+/*Ponteiro do fseek no COMEÇO do arquivo!
+Lê os dados do cabeçalho e coloca na struct.
+Parametros: arquivo de dados, ponteiro p/ a struct p/ reescrever.
 */
 void ler_cabecalho(FILE* ponteiro_arquivo, cabecalho *reg_cabecalho){
     if (ponteiro_arquivo == NULL) {
@@ -94,8 +112,11 @@ void ler_cabecalho(FILE* ponteiro_arquivo, cabecalho *reg_cabecalho){
     fread(&reg_cabecalho->nroParesEstacoes, sizeof(int), 1, ponteiro_arquivo);
 }
 
-/* Dado o arquivo binário, atualiza os valores no cabeçalho
-ATENÇÃO: ponteiros deve estar bem posicionado no começo do cabeçalho, senão dá erro*/
+
+/*Ponteiro do fseek no COMEÇO do arquivo!
+Escreve os dados do cabeçalho que foi dado na struct de parametro.
+Parametros: arquivo de dados, ponteiro p/ a struct p/salvar.
+*/
 void escreve_cabecalho(FILE* ponteiro_arquivo, cabecalho *reg_cabecalho){
     if (ponteiro_arquivo == NULL) {
         printf("Falha no processamento do arquivo.\n"); 
@@ -113,9 +134,11 @@ void escreve_cabecalho(FILE* ponteiro_arquivo, cabecalho *reg_cabecalho){
 
 
 
-/*Leitura e Escrita de Registros. 
-Dado o arquivo binário, retorna as informções naquele registro
-ATENÇÃO */
+/*
+Ponteiro do fseek no byteoffset do RRN!
+Lê os dados reg.dados e passa para struct de parametro.
+Parametros: arquivo de dados, ponteiro p/ a struct p/salvar.
+*/
 void ler_regdados(FILE* ponteiro_arquivo, dados* reg_dados){
     if (ponteiro_arquivo == NULL) {
         printf("Falha no processamento do arquivo.\n"); 
@@ -149,9 +172,11 @@ void ler_regdados(FILE* ponteiro_arquivo, dados* reg_dados){
 
 
 
-
-
-
+/*
+Ponteiro do fseek no byteoffset do RRN!
+Escreve os dados  da struct de parametro.
+Parametros: arquivo de dados, ponteiro p/ a struct.
+*/
 void escreve_regdados(FILE* ponteiro_arquivo, dados *reg_dados){
     if (ponteiro_arquivo == NULL) {
         printf("Falha no processamento do arquivo.\n"); 
@@ -268,9 +293,11 @@ void imprime_texto_ou_nulo(char *texto, int tamanho){
     printf(" ");
 }
 
-/*Imprimi o Registro de dados com a formatação pedida.
-Util para imprimir como se fosse a função printf()*/
 
+/*Imprimi o Registro de dados com a formatação pedida.
+Util para imprimir como se fosse a função printf()
+Parametros: Ponteiro p/struct de dados
+*/
 
 void imprime_registro_dados(dados * reg_dados) {
     
