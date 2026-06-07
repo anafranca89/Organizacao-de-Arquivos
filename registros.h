@@ -5,6 +5,9 @@
 #define TAM_REG 80
 #define TAM_CABECALHO 17
 #define NEGATIVO -1
+#include "fornecidas.h"
+
+
 
 typedef struct reg_cabecalho{
     char status;
@@ -33,6 +36,13 @@ typedef struct reg_dados{
 }dados;
 
 
+// Estrutura auxiliar para atualização
+typedef struct {
+    int rrn;
+    dados reg_dados;
+} AtualizacaoPendente;
+
+
 
 //construtores
 cabecalho cria_cabecalho();
@@ -41,6 +51,7 @@ dados cria_dados();
 FILE *ler_binario(char *arqbin);
 FILE * cria_escreve_binario(char *arqbin);
 FILE* escrever_binario(char *arqbin);
+FILE* abrir_para_escrita_binário(char *arq);
 
 
 void ler_cabecalho(FILE* ponteiro_arquivo, cabecalho *reg_cab);
@@ -48,6 +59,7 @@ void escreve_cabecalho(FILE* ponteiro_arquivo, cabecalho *reg_cab);
 
 void ler_regdados(FILE* ponteiro_arquivo, dados* reg_dados);
 void escreve_regdados(FILE *ponteiro_arquivo, dados* reg_dados);
+void atualizar_campos_registro(int p, char nomesAtualiza[][50], char valoresAtualiza[][200], dados *reg_dados);
 
 int calculo_byteoffset_dados(int RRN);
 

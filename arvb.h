@@ -1,6 +1,6 @@
 #ifndef ARVOREB_H
 #define ARVOREB_H
-#include "registros.h"
+#include "funcoes.h"
 #define TAM_CAB_IND 17
 #define TAM_REG_IND 53
 #define PROMOTION 1

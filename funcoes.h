@@ -1,25 +1,30 @@
 #ifndef FUNCOES_H
 #define FUNCOES_H
 
-
-typedef struct ArquivoAberto {
-    char nome[100];
-    struct ArquivoAberto *prox;
-} ArquivoAberto;
-
-
+#include "hash.h"
+#include "csv.h"
 
 
 void mostrar_binario_sequencial(FILE *bin);
 
 
-int verificar_criterios(int m, dados* reg_dados);
+int verificar_criterios(int m, char nomesCampos[][50], char valoresCampos[][200], dados* reg_dados);
 void buscar_registros(FILE *bin, NoHash *tabela[], int m,char nomesCampos[][50], char valoresCampos[][200]);
 
+void ler_par_campo_valor(char *campo, char *valor);
 
-int arquivo_ja_processado(ArquivoAberto *lista, char *nome_bin);
-void adicionar_arquivo_processado(ArquivoAberto **lista, char *nome_bin);
-void liberar_lista_arquivos(ArquivoAberto *lista);
+
+void remover_registros_dinamico(FILE *bin, NoHash *tabela[], int m,
+                                char nomesCampos[][50], char valoresCampos[][200]);
+void inserir_registro_dinamico(FILE *bin, NoHash *tabela[], dados *reg_dados); 
+void atualizar_registros_dinamico(FILE *bin, NoHash *tabela[],  int m, char nomesBusca[][50], char valoresBusca[][200],
+                                    int p, char nomesAtualiza[][50], char valoresAtualiza[][200]);
+
+
+void ler_e_inserir_registro(FILE *arq_dados, NoHash *tabela[]);
+
+
+
 
 #endif
 
