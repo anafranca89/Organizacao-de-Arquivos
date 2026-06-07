@@ -1,16 +1,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "registros.h"
-#include "fornecidas.h"
+#include "csv.h"
 
 
 // pula a vírgula do csv usando o ponteiro
-static void pular_virgula(char **p) {
+void pular_virgula(char **p) {
     if (**p == ',') (*p)++;
 }
 
-static int ler_inteiro_csv(char **p) {
+int ler_inteiro_csv(char **p) {
     int valor = 0;
     int tem_digito = 0;
 
@@ -26,7 +25,7 @@ static int ler_inteiro_csv(char **p) {
 
 
 // lê uma string no csv
-static int ler_string_csv(char **p, char *destino) {
+int ler_string_csv(char **p, char *destino) {
     int i = 0;
 
     while (**p != ',' && **p != '\0' && **p != '\n' && **p != '\r') {
@@ -61,7 +60,7 @@ static int ler_string_csv(char **p, char *destino) {
 int ler_registro_csv(FILE *csv, dados *reg_dados) {
     char linha[MAX_LINHA_CSV];
     char *p;
-    int valor, tem_digito, i;
+    
 
     if (csv == NULL || reg_dados == NULL) return 0;
     if (fgets(linha, MAX_LINHA_CSV, csv) == NULL) return 0;
@@ -89,53 +88,40 @@ int ler_registro_csv(FILE *csv, dados *reg_dados) {
 
 
 
-void adicionar_csv_no_binario(char *arq_csv, char *arq_bin, NoHash *tabela[]) {
+void adicionar_csv_no_binario(FILE *arq_csv, FILE *bin, NoHash *tabela[]) {
     char linha_cabecalho[MAX_LINHA_CSV];
     
-    FILE *csv = fopen(arq_csv, "r");
-    if (csv == NULL) {
+
+    cabecalho reg_cab;
+    dados reg_dados;
+    if (arq_csv == NULL || bin ==NULL) {
         printf("Falha no processamento do arquivo.\n");
         return;
     }
-    
-    cabecalho reg_cab;
-    dados reg_dados;
 
-    FILE *bin = escrever_binario(arq_bin); 
-    
-    if (bin == NULL) {
-        // Arquivo não existe -> cria e abre para escrita
-        bin = cria_escreve_binario(arq_bin); 
-        if (bin == NULL) {
-            printf("Falha no processamento do arquivo.\n");
-            fclose(csv); // CORREÇÃO 3: Evita vazamento do descritor do CSV
-            return;
-        }
+    // Arquivo já existe -> lê o cabeçalho existente
+    ler_cabecalho(bin, &reg_cab);
+
+    if (reg_cab.status != '0' && reg_cab.status != '1') {
         reg_cab = cria_cabecalho();
-        escreve_cabecalho(bin, &reg_cab);
-    } else {
-        // Arquivo já existe -> lê o cabeçalho existente
-        ler_cabecalho(bin, &reg_cab);
-        
-        // Se o arquivo existe - mas está inconsistente
-        if (reg_cab.status == '0') {
-            printf("Falha no processamento do arquivo (Arquivo corrompido).\n");
-            fclose(bin);
-            fclose(csv);
-            return;
-        }
 
-        //volta o status p/ 0 pois estamos modificando o arquivo
-        reg_cab.status = '0';
         fseek(bin, 0, SEEK_SET);
         escreve_cabecalho(bin, &reg_cab);
     }
-    
-    // Pula a linha de cabeçalho do CSV
-    if (fgets(linha_cabecalho, MAX_LINHA_CSV, csv) == NULL) {
+    // Se o arquivo existe - mas está inconsistente
+    if (reg_cab.status == '0') {
         printf("Falha no processamento do arquivo.\n");
-        fclose(bin);
-        fclose(csv);
+        return;
+    }
+
+    //volta o status p/ 0 pois estamos modificando o arquivo
+    reg_cab.status = '0';
+    fseek(bin, 0, SEEK_SET);
+    escreve_cabecalho(bin, &reg_cab);
+
+    // Pula a linha de cabeçalho do CSV
+    if (fgets(linha_cabecalho, MAX_LINHA_CSV, arq_csv) == NULL) {
+        printf("Falha no processamento do arquivo.\n");
         return;
     }
     
@@ -145,7 +131,7 @@ void adicionar_csv_no_binario(char *arq_csv, char *arq_bin, NoHash *tabela[]) {
     // Garante que a struct comece limpa antes da primeira leitura
     memset(&reg_dados, 0, sizeof(dados));
 
-    while (ler_registro_csv(csv, &reg_dados)) {
+    while (ler_registro_csv(arq_csv, &reg_dados)) {
 
         reg_dados.removido = '0';
         reg_dados.proximo = NEGATIVO;
@@ -153,7 +139,6 @@ void adicionar_csv_no_binario(char *arq_csv, char *arq_bin, NoHash *tabela[]) {
         // Escreve os dados estruturados no arquivo binário
         escreve_regdados(bin, &reg_dados);
 
-        // Gerenciamento de metadados via tabela Hash usando as strings lidas
         if (reg_dados.tamNomeEstacao > 0) {
             NoHash *busca = buscar_hash(tabela, reg_dados.nomeEstacao, reg_dados.tamNomeEstacao);
 
@@ -180,8 +165,6 @@ void adicionar_csv_no_binario(char *arq_csv, char *arq_bin, NoHash *tabela[]) {
     fseek(bin, 0, SEEK_SET);
     escreve_cabecalho(bin, &reg_cab);
 
-    fclose(bin);
-    fclose(csv);
 }
 
 

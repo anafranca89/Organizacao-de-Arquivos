@@ -1,8 +1,11 @@
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 #include "registros.h"
 
-/*Funções para o ARQUIVO BINÁRIO DE SAÍDA. Retornam o ponteiro de arquivo  fopen!*/
+/*Funções para o ARQUIVO BINÁRIO DE SAÍDA. Retornam o ponteiro de arquivo  fopen!
+    Apenas lê ->rb
+*/
 FILE * ler_binario(char *arqbin){
     FILE *file = fopen(arqbin, "rb");
     if(file == NULL){
@@ -11,6 +14,10 @@ FILE * ler_binario(char *arqbin){
     return file;
 }
 
+/* Retorna o ponteiro FILE.
+    Cria do zero no modo escrita.
+    Nao use se o arquivo existir!
+*/
 FILE * cria_escreve_binario(char *arqbin){
     FILE *file = fopen(arqbin, "wb+");
     if(file == NULL){
@@ -18,6 +25,10 @@ FILE * cria_escreve_binario(char *arqbin){
     }
     return file;
 }
+
+/*Abre no modo escrita binário.
+Apenas se o arquivo já existe!.
+*/
 FILE * escrever_binario(char *arqbin){
     FILE *file = fopen(arqbin, "rb+");
     if(file == NULL){
@@ -27,6 +38,21 @@ FILE * escrever_binario(char *arqbin){
 
 }
 
+
+
+
+FILE* abrir_para_escrita_binário(char *nome_arquivo) {
+    if (nome_arquivo == NULL) return NULL;
+
+    FILE *arq = escrever_binario(nome_arquivo);
+    if (arq == NULL) {
+        arq = cria_escreve_binario(nome_arquivo);
+        cabecalho cab = cria_cabecalho();
+        escreve_cabecalho(arq,&cab);
+    }
+
+    return arq;
+}
 
 cabecalho cria_cabecalho(){
     cabecalho aux;
@@ -43,6 +69,8 @@ dados cria_dados(){
     dados aux;
     aux.removido = '0';
     aux.proximo = NEGATIVO;
+    aux.tamNomeEstacao =0;
+    aux.tamNomeLinha =0;
     return aux;
 }
 
@@ -160,6 +188,65 @@ void escreve_regdados(FILE* ponteiro_arquivo, dados *reg_dados){
         fwrite(lixo, sizeof(char), lixo_escrever, ponteiro_arquivo);
     }
 }
+
+
+
+
+
+
+void atualizar_campos_registro(int p, char nomesAtualiza[][50], char valoresAtualiza[][200], dados *reg_dados) {
+    
+    for (int i = 0; i < p; i++) {
+        
+        if (strcmp(nomesAtualiza[i], "codEstacao") == 0) {
+            reg_dados->codEstacao = (strlen(valoresAtualiza[i]) == 0) ? -1 : atoi(valoresAtualiza[i]);
+        }
+        else if (strcmp(nomesAtualiza[i], "codLinha") == 0) {
+            reg_dados->codLinha = (strlen(valoresAtualiza[i]) == 0) ? -1 : atoi(valoresAtualiza[i]);
+        }
+        else if (strcmp(nomesAtualiza[i], "codProxEstacao") == 0) {
+            reg_dados->codProxEstacao = (strlen(valoresAtualiza[i]) == 0) ? -1 : atoi(valoresAtualiza[i]);
+        }
+        else if (strcmp(nomesAtualiza[i], "distProxEstacao") == 0) {
+            reg_dados->distProxEstacao = (strlen(valoresAtualiza[i]) == 0) ? -1 : atoi(valoresAtualiza[i]);
+        }
+        else if (strcmp(nomesAtualiza[i], "codLinhaIntegra") == 0) {
+            reg_dados->codLinhaIntegra = (strlen(valoresAtualiza[i]) == 0) ? -1 : atoi(valoresAtualiza[i]);
+        }
+        else if (strcmp(nomesAtualiza[i], "codEstIntegra") == 0) {
+            reg_dados->codEstIntegra = (strlen(valoresAtualiza[i]) == 0) ? -1 : atoi(valoresAtualiza[i]);
+        }
+        
+        else if (strcmp(nomesAtualiza[i], "nomeEstacao") == 0) {
+            if (strlen(valoresAtualiza[i]) == 0) {
+                reg_dados->tamNomeEstacao = 0;
+                reg_dados->nomeEstacao[0] = '\0';
+            } else {
+                reg_dados->tamNomeEstacao = strlen(valoresAtualiza[i]);
+                memcpy(reg_dados->nomeEstacao, valoresAtualiza[i], reg_dados->tamNomeEstacao);
+                reg_dados->nomeEstacao[reg_dados->tamNomeEstacao] = '\0';
+            }
+        }
+        else if (strcmp(nomesAtualiza[i], "nomeLinha") == 0) {
+            if (strlen(valoresAtualiza[i]) == 0) {
+                reg_dados->tamNomeLinha = 0;
+                reg_dados->nomeLinha[0] = '\0';
+            } else {
+                reg_dados->tamNomeLinha = strlen(valoresAtualiza[i]);
+                memcpy(reg_dados->nomeLinha, valoresAtualiza[i], reg_dados->tamNomeLinha);
+                reg_dados->nomeLinha[reg_dados->tamNomeLinha] = '\0';
+            }
+        }
+    }
+}
+
+
+
+
+
+
+
+
 
 
 
