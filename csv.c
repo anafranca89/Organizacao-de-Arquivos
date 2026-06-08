@@ -3,12 +3,15 @@
 #include <string.h>
 #include "csv.h"
 
-
-// pula a vírgula do csv usando o ponteiro
+/*Avança o ponteiro, se encontrar uma virgula.
+Util para parse do arquivo csv.
+*/
 void pular_virgula(char **p) {
     if (**p == ',') (*p)++;
 }
 
+/*Avança o ponteiro de leitura do csv, Retorna o inteiro lido, senão retorna -1.
+*/
 int ler_inteiro_csv(char **p) {
     int valor = 0;
     int tem_digito = 0;
@@ -24,7 +27,9 @@ int ler_inteiro_csv(char **p) {
 }
 
 
-// lê uma string no csv
+/*Avança o ponteiro do parser csv, lendo caracteres de uma string, e armazena no ponteiro de parametro.
+Retorna o tamanho da string lida. A string no parametro tem o terminador '\0'!
+*/
 int ler_string_csv(char **p, char *destino) {
     int i = 0;
 
@@ -56,7 +61,9 @@ int ler_string_csv(char **p, char *destino) {
 
 
 /* Função que recebe um arquivo csv, realiza o parse manual tratando campos vazios
-   e retorna as informações preenchidas diretamente na struct 'dados' */
+   e retorna as informações preenchidas  na struct 'dados' 
+   Retorna: 1 se a leitura ocorreu.
+            0 se os ponteiros são nulos ou a linha do csv está vazia*/
 int ler_registro_csv(FILE *csv, dados *reg_dados) {
     char linha[MAX_LINHA_CSV];
     char *p;
@@ -84,21 +91,37 @@ int ler_registro_csv(FILE *csv, dados *reg_dados) {
 
 
 
+/* 
+Adiciona os dados que estão no arquivo .csv no formato de registro de dados.
+Os ponteiros não devem ser NULL!
+Parametros: arquivo csv, arquivo binário de dados, tabela Hash
+    - Verificação de segurança
+        - os arquivos existem, mas existe inconsistencia de dados?
+    - Se o arquivo e criado do zero.
+        - escreve cabeçalho padrao
+        - enquanto existe dados no  csv, escreve na struct de registro eno arq.binario
+        - Para contar as Estaçoes unicas -- usa a tabela Hash, para contar as repetições
+        - Verifica se precisa aumentar o parEstação
+        - adiciona no arquivo cabeçalho
 
-
-
+    - Se o arquivo já existe e já continha dados
+        - verifica a consistencia dos dados e NAO sobreescreve.
+        -começa a escrever no proxRRN.
+        - enquanto existe dados no  csv, escreve na struct de registro eno arq.binario
+        - Para contar as Estaçoes unicas -- usa a tabela Hash, para contar as repetições
+        - Verifica se precisa aumentar o parEstação
+        - adiciona no arquivo cabeçalho
+*/
 
 void adicionar_csv_no_binario(FILE *arq_csv, FILE *bin, NoHash *tabela[]) {
     char linha_cabecalho[MAX_LINHA_CSV];
     
-
+    
     cabecalho reg_cab;
-    dados reg_dados;
-    if (arq_csv == NULL || bin ==NULL) {
-        printf("Falha no processamento do arquivo.\n");
-        return;
-    }
-
+    // Garante que a struct comece limpa antes da primeira leitura
+    dados reg_dados = cria_dados();
+    
+    
     // Arquivo já existe -> lê o cabeçalho existente
     ler_cabecalho(bin, &reg_cab);
 
@@ -126,10 +149,7 @@ void adicionar_csv_no_binario(FILE *arq_csv, FILE *bin, NoHash *tabela[]) {
     }
     
     int rrn_atual = reg_cab.proxRRN;
-    int byteoffset = calculo_byteoffset_dados(rrn_atual);
-    fseek(bin, byteoffset, SEEK_SET);
-    // Garante que a struct comece limpa antes da primeira leitura
-    memset(&reg_dados, 0, sizeof(dados));
+    fseek(bin, calculo_byteoffset_dados(rrn_atual), SEEK_SET);
 
     while (ler_registro_csv(arq_csv, &reg_dados)) {
 
@@ -156,7 +176,7 @@ void adicionar_csv_no_binario(FILE *arq_csv, FILE *bin, NoHash *tabela[]) {
         
         rrn_atual++;
 
-        memset(&reg_dados, 0, sizeof(dados));
+        reg_dados= cria_dados();
     }
 
     reg_cab.proxRRN = rrn_atual;
@@ -164,7 +184,6 @@ void adicionar_csv_no_binario(FILE *arq_csv, FILE *bin, NoHash *tabela[]) {
 
     fseek(bin, 0, SEEK_SET);
     escreve_cabecalho(bin, &reg_cab);
-
 }
 
 

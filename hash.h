@@ -14,7 +14,7 @@ typedef struct ArquivoAberto {
 } ArquivoAberto;
 
 typedef struct no_hash {
-    char nomeLinha[100];
+    char nome[100];
     int repeticoes;
     struct no_hash *prox;
 } NoHash;
