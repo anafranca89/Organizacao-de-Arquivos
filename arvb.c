@@ -2,27 +2,12 @@
 #include "arvb.h"  
 
 
-/*Parametros : arquivo inário para escrita e a struct em RAM do cabecalho
-Se ñ é possível abrir o arquivo, retorna erro.
-Se não, salva campo a campo.
-ATENÇÃO: ponteiros deve estar bem posicionado no começo do cabeçalho, senão dá erro*/
-
-void escreve_ind_cabecalho(FILE *ponteiro_arquivo, cab_indice* cab){
-    if (ponteiro_arquivo == NULL) {
-        printf("Falha no processamento do arquivo.\n"); 
-        return;
-    }
-    fwrite(&cab->status, sizeof(char), 1, ponteiro_arquivo);
-    fwrite(&cab->noRaiz, sizeof(int), 1, ponteiro_arquivo);
-    fwrite(&cab->topo, sizeof(int), 1, ponteiro_arquivo);
-    fwrite(&cab->proxRRN, sizeof(int), 1, ponteiro_arquivo);
-    fwrite(&cab->nroNos, sizeof(int), 1, ponteiro_arquivo);
-}
 
 
-/*Parametros : arquivo binário para escrita e a struct para escrita do cabecalho
-Se ñ é possível abrir o arquivo, retorna erro.
-Senão,  salva campo a campo na struct fornecida.
+
+/* lê o cabeçalho no arquivo de indices e retorna p/ a struct de parametro
+Ponteiro deve estar no começo do arquivo !
+Parametros : arquivo binário para escrita e a struct para escrita do cabecalho
 */
 void ler_ind_cabecalho(FILE* ponteiro_arquivo, cab_indice* cab ){
     if (ponteiro_arquivo == NULL) {
@@ -35,9 +20,25 @@ void ler_ind_cabecalho(FILE* ponteiro_arquivo, cab_indice* cab ){
     fread(&cab->proxRRN, sizeof(int), 1, ponteiro_arquivo);
     fread(&cab->nroNos, sizeof(int), 1, ponteiro_arquivo);
 }
+/* Escreve o cabeçalho no arquivo de indice, com as informações da struct de parametro.
+Parametros : arquivo inário para escrita e a struct em RAM do cabecalho
+*/
+void escreve_ind_cabecalho(FILE *ponteiro_arquivo, cab_indice* cab){
+    if (ponteiro_arquivo == NULL) {
+        printf("Falha no processamento do arquivo.\n"); 
+        return;
+    }
+    fwrite(&cab->status, sizeof(char), 1, ponteiro_arquivo);
+    fwrite(&cab->noRaiz, sizeof(int), 1, ponteiro_arquivo);
+    fwrite(&cab->topo, sizeof(int), 1, ponteiro_arquivo);
+    fwrite(&cab->proxRRN, sizeof(int), 1, ponteiro_arquivo);
+    fwrite(&cab->nroNos, sizeof(int), 1, ponteiro_arquivo);
+}
 
-
-
+/* Lê a struct de indices no arquivo. 
+Ponteiro deve estar no byteoffset correto!
+Parametros: ponteiro p/arquivo de indice, ponteiro p/ struct onde serão salvas as informações
+*/
 
 void ler_indice(FILE* ponteiro_arquivo, indice* reg_indice ){
     if (ponteiro_arquivo == NULL) {
@@ -61,6 +62,11 @@ void ler_indice(FILE* ponteiro_arquivo, indice* reg_indice ){
 }
 
 
+
+/* Escreve a struct de indices no arquivo. 
+Ponteiro deve estar no byteoffset correto!
+Parametros: ponteiro p/arquivo de indice, a struct a ser salva.
+*/
 void escreve_indice(FILE *ponteiro_arquivo, indice* reg_indice){
     if (ponteiro_arquivo == NULL) {
         printf("Falha no processamento do arquivo.\n"); 
@@ -117,7 +123,9 @@ indice new_indice(){
     return aux;
 }
 
-
+/*Função Auxiliar:
+Retorna o byteoffset de um RRN do arquivo de indices da arvore B
+*/
 int calculo_byteoffset_indice(int RRN){
     return RRN*TAM_REG_IND +TAM_CAB_IND;
 }
@@ -138,7 +146,7 @@ Caso2: Arquivo existe --> apenas abre arquivo p/escrita
 */
 void cria_arvore(FILE* arq_dados, char*arq_index ){
 
-    FILE* indexes = escrever_binario( arq_index);
+    FILE* indexes = cria_escreve_binario(arq_index);
     cab_indice index_cab = new_cab_indice();
 
     
@@ -254,9 +262,9 @@ Busca uma chave única int - codEstacao-  num nó da árvore.
 Caso 1: Arvore com elementos --> rrn da raiz >=0
 Caso 2: Arvore vazia --> rrn da raiz == -1
 Parametros: Arquivo de indices, rrn do no onde faz a busca, a chave para busca, 
-        e a posicao (1, 2, 3) da chave (Real ou Onde deveria estar)
+        e a posicao (1, 2, 3) da chave. posicao == -1 se a chave n existe
         ------util para inserção
-Retorna : RRN do nó onde a busca terminou --> -1 se não existe a chave
+Retorna : RRN do nó onde DEVERIA ESTAR ou ESTÁ.
 
 ->Chama a função no nó raiz
     - arvore existe? 
@@ -454,6 +462,7 @@ int insere_arvore(FILE* arq_index, cab_indice *cabecalho, int rrn_no , int chave
 */
 void insere_ordenado_no(indice *no, int chave, int filho_promovido,  int byte_ponteiro){
     if(no->nroChaves == 0){
+        //apenas insere no inicio
         no->C1 = chave;
         no->Pr1 = byte_ponteiro;
         no->arv2 = filho_promovido;
@@ -499,6 +508,7 @@ void insere_ordenado_no(indice *no, int chave, int filho_promovido,  int byte_po
             no->arv3 = no->arv2;
             no->arv2 = filho_promovido;
 
+            //insere no inicio
             no->C1 = chave;
             no->Pr1 = byte_ponteiro;
         }
@@ -513,7 +523,7 @@ void insere_ordenado_no(indice *no, int chave, int filho_promovido,  int byte_po
 Parametros: arquivo de indezx, cabeçalho do index, rrn do no, o proprio no, 
             chave q deve ser inserida, o rrn filho, e o byte_ponteiro.
             a chave q é realmente promovida, o seu byte ponteiro e seu filho
-
+    - Cria uma estrutura de comparação, com espaço para m+1 ->4 chaves, 4 ponteiro, 5 subarvores.
     - copia as chaves da pag atual e compara com a chave.
     - ordena as chaves
     - aloca um novo no no index
@@ -523,6 +533,7 @@ Parametros: arquivo de indezx, cabeçalho do index, rrn do no, o proprio no,
 void split (FILE *arq_index, cab_indice *cab_ind, int rrn_no_ant, indice *no_ant, 
            int chave, int byte_chave, int filho_chave,
            int *chave_promovida, int *byte_promovido, int *filho_promovido ){
+
     //estrutura para ordenar as chaves, subarvores e ponteiros.
     int chaves_temp[4];
     int byte_temp[4];
@@ -571,7 +582,7 @@ void split (FILE *arq_index, cab_indice *cab_ind, int rrn_no_ant, indice *no_ant
 
     //Distribuição dos valores
     /*  chave 0, 1 -> nó antigo
-        chave 2, 3 -> novo no -> chave 2 é promovida
+        chave 2, 3 -> novo no -> com chave 2  promovida
     */
 
     no_ant->C1 = chaves_temp[0];
