@@ -70,7 +70,8 @@ int hash_string(char *str, int tam, int primo) {
 
 
 
-/*Estrutura escolhida para auxiliar na busca de string foi por tabela Hash. 
+/*Estrutura escolhida para auxiliar na busca de string unicas foi tabela Hash.
+
 Se o tamnaho das strings é >0 insere na tabela hash.*/
 void carregar_nomes_no_hash(FILE *bin, NoHash *tabela[]) {
     
@@ -87,8 +88,7 @@ void carregar_nomes_no_hash(FILE *bin, NoHash *tabela[]) {
 
     for (rrn = 0; rrn < reg_cab.proxRRN; rrn++) {
         reg_dados = cria_dados();
-        int byteoffset = calculo_byteoffset_dados(rrn);
-        fseek(bin, byteoffset, SEEK_SET);
+        fseek(bin, calculo_byteoffset_dados(rrn), SEEK_SET);
         ler_regdados(bin, &reg_dados);
 
         if (reg_dados.removido == '1') {
@@ -103,8 +103,9 @@ void carregar_nomes_no_hash(FILE *bin, NoHash *tabela[]) {
 }
 
 
-
-//Inicialização da tabela Hash
+/* Inicialização da tabela Hash 
+- Setar os ponteiros como NULL
+*/
 void inicializar_tabela(NoHash *tabela[]) {
     for (int i = 0; i < TAM_TABELA; i++) {
         tabela[i] = NULL;
@@ -112,6 +113,9 @@ void inicializar_tabela(NoHash *tabela[]) {
 }
 
 
+/* Tabela alocada dinamicamente.
+-libera cada ponteiro 
+*/
 void liberar_tabela(NoHash *tabela[]) {
     for (int i = 0; i < TAM_TABELA; i++) {
         NoHash *atual = tabela[i];
@@ -128,13 +132,13 @@ void liberar_tabela(NoHash *tabela[]) {
 
 
 
-void inserir_hash(NoHash *tabela[], char *nomeLinha, int tamNomeLinha) {
-    int pos = hash_string(nomeLinha, tamNomeLinha, TAM_TABELA);
+void inserir_hash(NoHash *tabela[], char *nomeEstacao, int tamnomeEstacao) {
+    int pos = hash_string(nomeEstacao, tamnomeEstacao, TAM_TABELA);
     NoHash *atual = tabela[pos];
 
     while (atual != NULL) {
-        if ((int)strlen(atual->nomeLinha) == tamNomeLinha &&
-            strncmp(atual->nomeLinha, nomeLinha, tamNomeLinha) == 0) {
+        if ((int)strlen(atual->nome) == tamnomeEstacao &&
+            strncmp(atual->nome, nomeEstacao, tamnomeEstacao) == 0) {
             atual->repeticoes++;
             return;
         }
@@ -143,8 +147,8 @@ void inserir_hash(NoHash *tabela[], char *nomeLinha, int tamNomeLinha) {
 
     NoHash *novo = (NoHash *) malloc(sizeof(NoHash));
     if (novo == NULL) return;
-    memcpy(novo->nomeLinha, nomeLinha, tamNomeLinha);
-    novo->nomeLinha[tamNomeLinha] = '\0';
+    memcpy(novo->nome, nomeEstacao, tamnomeEstacao);
+    novo->nome[tamnomeEstacao] = '\0';
     novo->repeticoes = 1;
     novo->prox = tabela[pos];
 
@@ -153,13 +157,13 @@ void inserir_hash(NoHash *tabela[], char *nomeLinha, int tamNomeLinha) {
 
 
 
-NoHash* buscar_hash(NoHash *tabela[], char *nomeLinha, int tamNomeLinha) {
-    int pos = hash_string(nomeLinha, tamNomeLinha, TAM_TABELA);
+NoHash* buscar_hash(NoHash *tabela[], char *nomeEstacao, int tamnomeEstacao) {
+    int pos = hash_string(nomeEstacao, tamnomeEstacao, TAM_TABELA);
     NoHash *atual = tabela[pos];
 
     while (atual != NULL) {
-        if ((int)strlen(atual->nomeLinha) == tamNomeLinha &&
-            strncmp(atual->nomeLinha, nomeLinha, tamNomeLinha) == 0) {
+        if ((int)strlen(atual->nomeEstacao) == tamnomeEstacao &&
+            strncmp(atual->nomeEstacao, nomeEstacao, tamnomeEstacao) == 0) {
             return atual;
         }
         atual = atual->prox;
@@ -204,8 +208,8 @@ void decrementar_hash(NoHash *tabela[], char *nomeEstacao, int tamNomeEstacao) {
     NoHash *anterior = NULL;
 
     while (atual != NULL) {
-        if ((int)strlen(atual->nomeLinha) == tamNomeEstacao &&
-            strncmp(atual->nomeLinha, nomeEstacao, tamNomeEstacao) == 0) {
+        if ((int)strlen(atual->nomeEstacao) == tamNomeEstacao &&
+            strncmp(atual->nomeEstacao, nomeEstacao, tamNomeEstacao) == 0) {
 
             atual->repeticoes--;
 

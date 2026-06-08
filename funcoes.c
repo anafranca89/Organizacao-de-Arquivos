@@ -19,9 +19,14 @@ void ler_par_campo_valor(char *campo, char *valor) {
     }
 }
 
-/*  Verifica se o registro de dados lido atende a todos os critérios 
-  de busca informados pelo usuário na main.
- Retorna 1 se o registro for compatível ou 0 caso falhe em algum critério.
+/*  
+Verifica se o registro de dados lido atende a todos os critérios 
+de busca informados pelo usuário na main.
+Parametros: qtd de campos p/ comparar; vetor com o nomes dos campos, o valor dos campos procurados e o registro p/comparação
+Retorna:  1 - registro compativel. 0 se não é comaptivel
+    -Para cada valor m:
+    - verifica qual o campo 
+        - compara o valor buscado com o valor do campo no reg.dados
  */
 int verificar_criterios(int m, char nomesCampos[][50], char valoresCampos[][200], dados *reg_dados) {
     
@@ -95,7 +100,23 @@ int verificar_criterios(int m, char nomesCampos[][50], char valoresCampos[][200]
 
 
 
-/*Função SELECT WHERE :  dados os campos e os valores procurados, imprimir os registros validos */
+/*
+Função SELECT WHERE :  dados os campos e os valores procurados,
+ imprimir os registros validos
+ Parametros: arquivo de dados, tabela Hash, qtd de campos na busca, 
+            o vetor com nomesCampos, e o vetor com valoresCampos
+    - Para manter o registro de Estaçoes Unicas, existe a tabela Hash.
+    Caso1: A busca foi feita com o campo nomeEstacao e ele n existe?
+        - Busca na tabela Hash, que retorna o ponteiro p/ a posição na tabela dinamica
+        - Existe na tabela Hash?
+        - Se sim - continua. Se não -> termina a busca com Registro Inexistente
+    Caso2: A busca n tem o nomeEstacao, ou aquele nome existe nos registros.
+        - busca sequencial em cada rrn.
+            - pula os rrns logicamente removidos.
+        - verifica cada campo, comparando com os valores procurados
+        - Achou? - Imprime
+        - Nao achou? - Registro Inexistente
+*/
 void buscar_registros(FILE *bin, NoHash *tabela[], int m,
                       char nomesCampos[][50], char valoresCampos[][200]) {
     if (bin == NULL) {
@@ -108,22 +129,24 @@ void buscar_registros(FILE *bin, NoHash *tabela[], int m,
     cabecalho reg_cab;
     dados reg_dados;
 
-    int temNomeLinha = 0;
-    char valorNomeLinha[200];
-    int tamValorNomeLinha = 0;
+    int temEstacao = 0;
+    char valorEstacao[200];
+    int temValorEstacao = 0;
+
     for (i = 0; i < m; i++) {
         // verifica se um dos campos é Estação,
         // Se sim, podemos procurar no hash e facilitar a busca.
         if (strcmp(nomesCampos[i], "nomeEstacao") == 0) {
-            temNomeLinha = 1;
-            strcpy(valorNomeLinha, valoresCampos[i]);
-            tamValorNomeLinha = strlen(valorNomeLinha);
+            temEstacao = 1;
+            strcpy(valorEstacao, valoresCampos[i]);
+            temValorEstacao = strlen(valorEstacao);
         }
     }
 
+
     //Se  tem nomeLinha - usa o hash para buscar usando o nome
-    if (temNomeLinha && strlen(valorNomeLinha) != 0) {
-        NoHash *h = buscar_hash(tabela, valorNomeLinha, tamValorNomeLinha);
+    if (temEstacao && strlen(valorEstacao) != 0) {
+        NoHash *h = buscar_hash(tabela, valorEstacao, temValorEstacao);
 
         if (h == NULL) {
             printf("Registro inexistente.\n");
@@ -143,8 +166,7 @@ void buscar_registros(FILE *bin, NoHash *tabela[], int m,
     */
     for (rrn = 0; rrn < reg_cab.proxRRN; rrn++) {
         int ok = 1;
-
-        memset(&reg_dados, 0, sizeof(dados));
+        reg_dados = cria_dados();
         // Reposiciona o ponteiro de leitura
         fseek(bin, calculo_byteoffset_dados(rrn), SEEK_SET);
         ler_regdados(bin, &reg_dados);
@@ -155,7 +177,7 @@ void buscar_registros(FILE *bin, NoHash *tabela[], int m,
         ok = verificar_criterios(m, nomesCampos, valoresCampos, &reg_dados);
             
 
-        // Se o registro atendeu a todas as m condições concomitantes
+        // Se o registro atendeu a todas as m condições 
         if (ok) {
             imprime_registro_dados(&reg_dados);
             achou = 1;
@@ -209,15 +231,13 @@ void mostrar_binario_sequencial(FILE *bin){
 
 
 
+
  /* 
     insere um registro usando o conceito de pilha de rns dos removidos ensinado em aula,
     isto é, apenas marca como logicamente removido.
-    
     Parâmetros:  arquivo de dados, Tabela Hash, 
 
 */
-
-
 
 void ler_e_inserir_registro(FILE *bin, NoHash *tabela[], cabecalho *reg_cabecalho) {
 
@@ -269,7 +289,7 @@ void ler_e_inserir_registro(FILE *bin, NoHash *tabela[], cabecalho *reg_cabecalh
     isto é, apenas marca como logicamente removido.
 
     Parâmetros:  arquivo de dados, Tabela Hash, qtd de campos a serem verificados,
-                nomedos campos, valor dos campos.
+                    nomedos campos, valor dos campos.
 
 */
 
@@ -288,7 +308,7 @@ void remover_registros_dinamico(FILE *bin, NoHash *tabela[], int m,
     }
 
     fseek(bin, 0, SEEK_SET);
-    ler_cabecalho(bin,&reg_cab);
+    ler_cabecalho(bin, &reg_cab);
 
 	int *rrns_remover = (int *) malloc(sizeof(int) * (reg_cab.proxRRN + 10));
     if (rrns_remover == NULL) {
@@ -549,6 +569,4 @@ void atualizar_registros_dinamico(FILE *bin, NoHash *tabela[],
     escreve_cabecalho(bin, &reg_cab);
     
     free(atualizacoes);
-
-
 }
