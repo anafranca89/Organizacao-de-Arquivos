@@ -95,7 +95,12 @@ void carregar_nomes_no_hash(FILE *bin, NoHash *tabela[]) {
             continue;
         }
         if (reg_dados.tamNomeEstacao > 0) {
-            inserir_hash(tabela, reg_dados.nomeEstacao, reg_dados.tamNomeEstacao);
+            NoHash *h = buscar_hash(tabela, reg_dados.nomeEstacao, reg_dados.tamNomeEstacao);
+            if (h == NULL) {
+                inserir_hash(tabela, reg_dados.nomeEstacao, reg_dados.tamNomeEstacao);
+            } else {
+                h->repeticoes++; 
+            }
         }
     }
 
@@ -162,8 +167,8 @@ NoHash* buscar_hash(NoHash *tabela[], char *nomeEstacao, int tamnomeEstacao) {
     NoHash *atual = tabela[pos];
 
     while (atual != NULL) {
-        if ((int)strlen(atual->nomeEstacao) == tamnomeEstacao &&
-            strncmp(atual->nomeEstacao, nomeEstacao, tamnomeEstacao) == 0) {
+        if ((int)strlen(atual->nome) == tamnomeEstacao &&
+            strncmp(atual->nome, nomeEstacao, tamnomeEstacao) == 0) {
             return atual;
         }
         atual = atual->prox;
@@ -174,29 +179,43 @@ NoHash* buscar_hash(NoHash *tabela[], char *nomeEstacao, int tamnomeEstacao) {
 
 
 
-// função que integra todas as outras para obter o ponteiro de um arquivo binário
+
+
+/* função que integra todas as outras para obter o ponteiro de um arquivo binário
+Parametros: ponteira p/lista de arquivos abertos, nome do arquivo, flag p/abrir arquivo como leitura ou como escrita
+    ponteiro p/tabela Hash.
+Retorna: O ponteiro d arquivo aberto no modo na flag de escrita.
+*/
 FILE *obter_arquivo_binario(ArquivoAberto **lista_arquivos,
-                            char *nome_bin,
+                            char *nome_bin, int escrita, 
                             NoHash *tabela[]) {
     ArquivoAberto *atual;
     FILE *bin;
 
     atual = buscar_arquivo(*lista_arquivos, nome_bin);
 
+
     if (atual != NULL) {
+        fseek(atual->arquivo, 0, SEEK_SET);
         return atual->arquivo;
-    } else {
-        bin = fopen(nome_bin, "r+b");
-
-        if (bin == NULL) {
-            return NULL;
-        }
-
-        adicionar_arquivo_processado(lista_arquivos, nome_bin, bin);
-        carregar_nomes_no_hash(bin, tabela);
-
-        return bin;
+    } 
+    
+    if(escrita){
+        bin = abrir_para_escrita_binário(nome_bin);
+    }else{
+        bin = ler_binario(nome_bin);
     }
+
+    if (bin == NULL) {
+        return NULL;
+    }
+
+    if (!arquivo_ja_processado(*lista_arquivos, nome_bin)) {
+        adicionar_arquivo_processado(lista_arquivos, nome_bin, bin);
+        liberar_tabela(tabela);
+        carregar_nomes_no_hash(bin, tabela);
+    }
+    return bin;
 }
 
 
@@ -208,8 +227,8 @@ void decrementar_hash(NoHash *tabela[], char *nomeEstacao, int tamNomeEstacao) {
     NoHash *anterior = NULL;
 
     while (atual != NULL) {
-        if ((int)strlen(atual->nomeEstacao) == tamNomeEstacao &&
-            strncmp(atual->nomeEstacao, nomeEstacao, tamNomeEstacao) == 0) {
+        if ((int)strlen(atual->nome) == tamNomeEstacao &&
+            strncmp(atual->nome, nomeEstacao, tamNomeEstacao) == 0) {
 
             atual->repeticoes--;
 

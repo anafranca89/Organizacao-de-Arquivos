@@ -23,7 +23,7 @@ int main() {
             case 1:
                 scanf("%s %s", nome_csv, nome_bin);
 
-                bin = cria_escreve_binario(nome_bin);
+                bin = abrir_para_escrita_binário(nome_bin);
                 FILE *csv = fopen(nome_csv, "r");
                 if (csv == NULL || bin == NULL) {
                     printf("Falha no processamento do arquivo.\n");
@@ -47,25 +47,20 @@ int main() {
         
             case 2:
                 scanf("%s", nome_bin);
-
-                bin = ler_binario(nome_bin);
-
+                
+               bin = ler_binario(nome_bin);
                 if (bin == NULL) {
                     printf("Falha no processamento do arquivo.\n");
                     liberar_tabela(tabela);
                     liberar_lista_arquivos(lista_arquivos);
                     return 0;
                 }
-                
                 if (!arquivo_ja_processado(lista_arquivos, nome_bin)) {
                     adicionar_arquivo_processado(&lista_arquivos, nome_bin, NULL);
                     carregar_nomes_no_hash(bin, tabela);
                 }
-
                 mostrar_binario_sequencial(bin);
                 fclose(bin);
-
-                
                 break;
 
             case 3: 
@@ -81,10 +76,40 @@ int main() {
                     return 0;
                 }
 
-                if (!arquivo_ja_processado(lista_arquivos, nome_bin)) {
-                    adicionar_arquivo_processado(&lista_arquivos, nome_bin, NULL);
-                    carregar_nomes_no_hash(bin, tabela);
+                scanf("%d", &n);
+
+                for (i = 0; i < n; i++) {
+                    char nomesCampos[8][50];
+                    char valoresCampos[8][200];
+
+                    scanf("%d", &m);
+                    for (j = 0; j < m; j++) {
+                        ler_par_campo_valor(nomesCampos[j], valoresCampos[j]);
+                    }
+                    buscar_registros(bin, tabela, m, nomesCampos, valoresCampos);
+                    printf("\n");
                 }
+                fclose(bin);
+
+                break;
+            case 4:
+                
+                scanf("%s", nome_bin);
+                bin = abrir_para_escrita_binário(nome_bin);
+                // caso o arquivo for inexistente, mostra a saída pedida e limpa as estruturas
+                if (bin == NULL) {
+                    printf("Falha no processamento do arquivo.\n");
+                    liberar_tabela(tabela);
+                    liberar_lista_arquivos(lista_arquivos);
+                    return 0;
+                }
+
+    
+                ler_cabecalho(bin, &cab);
+                // começa o arquivo com inoperando
+                cab.status = '0';
+                fseek(bin, 0, SEEK_SET);
+                escreve_cabecalho(bin, &cab);
 
                 scanf("%d", &n);
 
@@ -98,59 +123,11 @@ int main() {
                         ler_par_campo_valor(nomesCampos[j], valoresCampos[j]);
                     }
 
-                    buscar_registros(bin, tabela, m, nomesCampos, valoresCampos);
-                    printf("\n");
+                    remover_registros_dinamico(bin, tabela, m, nomesCampos, valoresCampos);
                 }
-
+                    
                 fclose(bin);
-
-                break;
-            case 4:
-                
-
-                scanf("%s", nome_bin);
-                // obtém um ponteiro para o arquivo, abrindo um novo se necessário
-                bin = abrir_para_escrita_binário(nome_bin);
-                    // caso o arquivo for inexistente, mostra a saída pedida e limpa as estruturas
-                    if (bin == NULL) {
-                        printf("Falha no processamento do arquivo.\n");
-                        liberar_tabela(tabela);
-                        liberar_lista_arquivos(lista_arquivos);
-                        return 0;
-                    }
-
-                    if (!arquivo_ja_processado(lista_arquivos, nome_bin)) {
-                        adicionar_arquivo_processado(&lista_arquivos, nome_bin, bin);
-                        carregar_nomes_no_hash(bin, tabela); // <-- ISSO É VITAL!
-                    }
-                    // lê o cabeçalho
-                    fseek(bin, 0, SEEK_SET);
-                    ler_cabecalho(bin, &cab);
-                    // começa o arquivo com inoperando
-                    cab.status = '0';
-                    fseek(bin, 0, SEEK_SET);
-                    escreve_cabecalho(bin, &cab);
-
-                    scanf("%d", &n);
-
-                    for (i = 0; i < n; i++) {
-                        char nomesCampos[8][50];
-                        char valoresCampos[8][200];
-
-                        scanf("%d", &m);
-
-                        for (j = 0; j < m; j++) {
-                            ler_par_campo_valor(nomesCampos[j], valoresCampos[j]);
-                        }
-
-                        remover_registros_dinamico(bin, tabela, m, nomesCampos, valoresCampos);
-                    }
-                    
-
-                    fclose(bin);
-                    BinarioNaTela(nome_bin);
-                
-                    
+                BinarioNaTela(nome_bin);
                 break;
                     
 
@@ -358,8 +335,6 @@ int main() {
                 }
                 fclose(index);
                 fclose(bin);
-
-
                 break;
 
         }

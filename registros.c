@@ -43,9 +43,8 @@ FILE * escrever_binario(char *arqbin){
 
 /*Função que une abrir p/ escrita.
 Se o arquivo existe retorna ele.
-Senao, cria e retorna.
+Senao, cria e retorna, ponteiro posicionado no inicio.
 */
-
 FILE* abrir_para_escrita_binário(char *nome_arquivo) {
     if (nome_arquivo == NULL) return NULL;
 
@@ -279,7 +278,7 @@ void atualizar_campos_registro(int p, char nomesAtualiza[][50], char valoresAtua
 
 /*Funções auxiliares para imprimir informações ao usuário.
 -> Ajudam na modularização
--> Imprime os campos NULOs  com a formatação pedida.
+-> Imprime os campos NULOs de int  com a formatação pedida.
 */
 void imprime_inteiro_ou_nulo(int valor){
     if(valor == -1) printf("NULO");
@@ -287,6 +286,9 @@ void imprime_inteiro_ou_nulo(int valor){
     printf(" ");
 }
 
+/*
+-> Imprime os camposde strings NULOs  com a formatação pedida.
+*/
 void imprime_texto_ou_nulo(char *texto, int tamanho){
     if(tamanho == 0) printf("NULO");
     else printf("%.*s", tamanho, texto);
@@ -298,7 +300,6 @@ void imprime_texto_ou_nulo(char *texto, int tamanho){
 Util para imprimir como se fosse a função printf()
 Parametros: Ponteiro p/struct de dados
 */
-
 void imprime_registro_dados(dados * reg_dados) {
     
     imprime_inteiro_ou_nulo(reg_dados->codEstacao);

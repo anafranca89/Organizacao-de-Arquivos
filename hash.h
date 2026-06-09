@@ -38,7 +38,7 @@ void decrementar_hash(NoHash *tabela[], char *nomeEstacao, int tamNomeEstacao);
 
 NoHash* buscar_hash(NoHash *tabela[], char *nomeLinha, int tamNomeLinha);
 FILE *obter_arquivo_binario(ArquivoAberto **lista_arquivos,
-                            char *nome_bin,
+                            char *nome_bin, int escrita,
                             NoHash *tabela[]);
 
 #endif
