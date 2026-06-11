@@ -6,14 +6,11 @@
 #define TAM_REG 80
 #define TAM_CABECALHO 17
 
-FILE* ler_binario(char *arqbin);
-FILE* escrever_binario(char *arqbin);
-
 void ler_cabecalho(FILE* ponteiro_arquivo, char *status, int *topo, int *proxRRN, int *nroEstacoes, int *nroParesEstacoes);
 
 void escreve_cabecalho(FILE* ponteiro_arquivo, char *status, int *topo, int *proxRRN, int *nroEstacoes, int *nroParesEstacoes);
 
-void ler_regdados(FILE* ponteiro_arquivo, 
+char ler_regdados(FILE* ponteiro_arquivo, 
                   char *removido,
                   int *proximo,
                   int *codEstacao,
