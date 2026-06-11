@@ -1,10 +1,8 @@
 #include <stdio.h>
 #include "registros.h"
 
-
-
 /*Lê os dados do cabeçalho e coloca nas variáveis dadas
-ATENÇÃO: ponteiros deve estar bem posicionado no começo do cabeçalho, senão dá erro
+os ponteiros deve estar bem posicionado no começo do cabeçalho, senão dá erro
 */
 void ler_cabecalho(FILE* ponteiro_arquivo, char *status, int *topo, int *proxRRN, int *nroEstacoes, int *nroParesEstacoes){
     if (ponteiro_arquivo == NULL) {
@@ -19,7 +17,7 @@ void ler_cabecalho(FILE* ponteiro_arquivo, char *status, int *topo, int *proxRRN
 }
 
 /* Dado o arquivo binário, atualiza os valores no cabeçalho
-ATENÇÃO: ponteiros deve estar bem posicionado no começo do cabeçalho, senão dá erro*/
+os ponteiros deve estar bem posicionado no começo do cabeçalho, senão dá erro*/
 void escreve_cabecalho(FILE* ponteiro_arquivo, char *status, int *topo, int *proxRRN, int *nroEstacoes, int *nroParesEstacoes){
     if (ponteiro_arquivo == NULL) {
         printf("Falha no processamento do arquivo.\n"); 
@@ -33,15 +31,19 @@ void escreve_cabecalho(FILE* ponteiro_arquivo, char *status, int *topo, int *pro
 }
 
 /*Leitura e Escrita de Registros. 
-Dado o arquivo binário, retorna as informações naquele registro nas variáveis dadas como parâmetro.
-ATENÇÃO */
-void ler_regdados(FILE* ponteiro_arquivo, char *removido,int *proximo, int *codEstacao, int *codLinha, int *codProxEstacao,int *distProxEstacao, 
+Dado o arquivo binário, retorna as informções naquele registro
+os ponteiros deve estar bem posicionado no começo do cabeçalho, senão dá erro */
+char ler_regdados(FILE* ponteiro_arquivo, char *removido,int *proximo, int *codEstacao, int *codLinha, int *codProxEstacao,int *distProxEstacao, 
 int *codLinhaIntegra, int *codEstIntegra, int *tamNomeEstacao, char *nomeEstacao, int *tamNomeLinha, char *nomeLinha){
     if (ponteiro_arquivo == NULL) {
         printf("Falha no processamento do arquivo.\n"); 
-        return;
+        return '0';
     }
     fread(removido, sizeof(char), 1, ponteiro_arquivo);
+    if (*removido == '1') {
+        fseek(ponteiro_arquivo, 79, SEEK_CUR);
+        return '1';
+    }
     fread(proximo, sizeof(int), 1, ponteiro_arquivo);
     fread(codEstacao, sizeof(int), 1, ponteiro_arquivo);
     fread(codLinha, sizeof(int), 1, ponteiro_arquivo);
@@ -55,14 +57,16 @@ int *codLinhaIntegra, int *codEstIntegra, int *tamNomeEstacao, char *nomeEstacao
     fread(nomeLinha, sizeof(char), *tamNomeLinha, ponteiro_arquivo);
     int bytes_escritos = 37 + *tamNomeEstacao + *tamNomeLinha;
     char lixo = '$';
-  
     while (bytes_escritos < 80) {
         fread(&lixo, sizeof(char), 1, ponteiro_arquivo);
         bytes_escritos++;
     }
+    return '0';
 }
 
-
+/*Leitura e Escrita de Registros. 
+Dado o arquivo binário, escreve as informções naquele registro
+ATENÇÃO ponteiros deve estar bem posicionado no começo do cabeçalho, senão dá erro */
 void escreve_regdados(FILE* ponteiro_arquivo, char *removido,int *proximo, int *codEstacao, int *codLinha, int *codProxEstacao,int *distProxEstacao, 
 int *codLinhaIntegra, int *codEstIntegra, int *tamNomeEstacao, char *nomeEstacao, int *tamNomeLinha, char *nomeLinha){
     if (ponteiro_arquivo == NULL) {
@@ -82,14 +86,12 @@ int *codLinhaIntegra, int *codEstIntegra, int *tamNomeEstacao, char *nomeEstacao
     fwrite(tamNomeLinha, sizeof(int), 1, ponteiro_arquivo);
     fwrite(nomeLinha, sizeof(char), *tamNomeLinha, ponteiro_arquivo);
     int bytes_escritos = 37 + *tamNomeEstacao + *tamNomeLinha;
-    
     char lixo = '$';
-    //O registro deve sempre ter 80 bytes. Preenche o espaço faltante com caracteres lixo
-    
     while (bytes_escritos < 80) {
         fwrite(&lixo, sizeof(char), 1, ponteiro_arquivo);
         bytes_escritos++;
     }
+}
 
 
 
