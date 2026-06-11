@@ -103,9 +103,12 @@ void carregar_nomes_no_hash(FILE *bin, NoHash *tabela[]) {
             }
         }
     }
-
     fseek(bin, 0, SEEK_SET);
 }
+
+
+
+
 
 
 /* Inicialização da tabela Hash 

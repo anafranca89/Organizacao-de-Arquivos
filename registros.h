@@ -30,9 +30,9 @@ typedef struct reg_dados{
     int tamNomeEstacao; 
     /*espaço de 50 - suficiente para o pior caso, onde apenas uma das strings ocupa os 
     80 - 37 = 43 bytes restantes */
-    char nomeEstacao[51];
+    char nomeEstacao[200];
     int tamNomeLinha;
-    char nomeLinha[51]; 
+    char nomeLinha[200]; 
 }dados;
 
 

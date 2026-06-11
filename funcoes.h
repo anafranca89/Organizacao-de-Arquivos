@@ -14,8 +14,8 @@ void buscar_registros(FILE *bin, NoHash *tabela[], int m,char nomesCampos[][50],
 void ler_par_campo_valor(char *campo, char *valor);
 
 
-void remover_registros_dinamico(FILE *bin, NoHash *tabela[], int m,
-                                char nomesCampos[][50], char valoresCampos[][200]);
+void remover_registros_dinamico(FILE *bin, NoHash *tabela[], cabecalho* reg, int  m,
+                                char nomesCampos[][50], char valoresCampos[][200], char ultimo);
 void inserir_registro_dinamico(FILE *bin, NoHash *tabela[], cabecalho *cab, dados *reg_dados); 
 void atualizar_registros_dinamico(FILE *bin, NoHash *tabela[], int m, char nomesBusca[][50], char valoresBusca[][200],
                                     int p, char nomesAtualiza[][50], char valoresAtualiza[][200]);

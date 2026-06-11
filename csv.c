@@ -117,7 +117,7 @@ void adicionar_csv_no_binario(FILE *arq_csv, FILE *bin, NoHash *tabela[]) {
     char linha_cabecalho[MAX_LINHA_CSV];
     
     
-    cabecalho reg_cab;
+    cabecalho reg_cab =cria_cabecalho();;
     // Garante que a struct comece limpa antes da primeira leitura
     dados reg_dados = cria_dados();
     

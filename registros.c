@@ -79,6 +79,8 @@ dados cria_dados(){
     dados aux;
     aux.removido = '0';
     aux.proximo = NEGATIVO;
+    aux.nomeEstacao[0] = '\0';
+    aux.nomeLinha[0] = '\0';
     aux.tamNomeEstacao =0;
     aux.tamNomeLinha =0;
     return aux;

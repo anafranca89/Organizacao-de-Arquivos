@@ -241,8 +241,7 @@ void mostrar_binario_sequencial(FILE *bin){
 
 void ler_e_inserir_registro(FILE *bin, NoHash *tabela[], cabecalho *reg_cabecalho) {
 
-    dados reg_dados;
-    memset(&reg_dados, 0, sizeof(dados));
+    dados reg_dados= cria_dados();
 
     char strCodEstacao[50], strCodLinha[50], strCodProxEstacao[50], strDistProxEstacao[50];
     char strCodLinhaIntegra[50], strCodEstIntegra[50];
@@ -285,21 +284,19 @@ void ler_e_inserir_registro(FILE *bin, NoHash *tabela[], cabecalho *reg_cabecalh
 
 
  /* 
-    insere um registro usando o conceito de pilha de rns dos removidos ensinado em aula,
+    remove um registro usando o conceito de pilha de rns dos removidos ensinado em aula,
     isto é, apenas marca como logicamente removido.
 
     Parâmetros:  arquivo de dados, Tabela Hash, qtd de campos a serem verificados,
                     nomedos campos, valor dos campos.
 
 */
-
-void remover_registros_dinamico(FILE *bin, NoHash *tabela[], int m,
-                                char nomesCampos[][50], char valoresCampos[][200]) {
-    int i;
-    int qtd_remocoes = 0;
+void remover_registros_dinamico(FILE *bin, NoHash *tabela[],cabecalho *reg_cab, int m,
+                                char nomesCampos[][50], char valoresCampos[][200],
+                                char ultimo) {
+    
     int rrn_atual = 0;
     
-    cabecalho reg_cab;
     dados reg_dados;
 
     if (bin == NULL) {
@@ -307,73 +304,53 @@ void remover_registros_dinamico(FILE *bin, NoHash *tabela[], int m,
         return;
     }
 
-    fseek(bin, 0, SEEK_SET);
-    ler_cabecalho(bin, &reg_cab);
 
-	int *rrns_remover = (int *) malloc(sizeof(int) * (reg_cab.proxRRN + 10));
-    if (rrns_remover == NULL) {
-        printf("Falha no processamento do arquivo.\n");
-        return;
-    }
+	
 
-  	for (rrn_atual = 0; rrn_atual < reg_cab.proxRRN; rrn_atual++) {
-        
-        
+  	for (rrn_atual = 0; rrn_atual < reg_cab->proxRRN; rrn_atual++) {
+        int ok =1;
+        reg_dados = cria_dados();
+        //fseek(bin, calculo_byteoffset_dados(rrn_atual), SEEK_SET);
         ler_regdados(bin, &reg_dados);
         
-        if (reg_dados.removido != '1') {
-        int ok = verificar_criterios(m, nomesCampos, valoresCampos, &reg_dados);
-            if (ok) {
-                rrns_remover[qtd_remocoes++] = rrn_atual;
-                
-                // Atualização estações únicas
-                if (reg_dados.tamNomeEstacao > 0) {
-                    NoHash *h = buscar_hash(tabela, reg_dados.nomeEstacao, reg_dados.tamNomeEstacao);
-                    if (h != NULL && h->repeticoes == 1) {
-                        reg_cab.nroEstacoes--;
-                    } 
-                    decrementar_hash(tabela, reg_dados.nomeEstacao, reg_dados.tamNomeEstacao);
+        if (reg_dados.removido == '1') continue;
+
+        ok = verificar_criterios(m, nomesCampos, valoresCampos, &reg_dados);
+        if (ok) {
+            int topo_antigo = reg_cab->topo;
+            char removido = '1';
+            int prox  = topo_antigo;
+
+            reg_dados.removido = removido;
+            reg_dados.proximo= prox;
+            
+            fseek(bin, -TAM_REG, SEEK_CUR);
+            escreve_regdados(bin, &reg_dados);
+            
+            reg_cab->topo = rrn_atual;
+            
+            // Atualização estações únicas
+            if (reg_dados.tamNomeEstacao > 0) {
+                NoHash *h = buscar_hash(tabela, reg_dados.nomeEstacao, reg_dados.tamNomeEstacao);
+
+                if (h != NULL && h->repeticoes == 1) {
+                    reg_cab->nroEstacoes--;
                 }
-                
-                // Atualização dos pares de estações
-                if (reg_dados.codProxEstacao != -1) {
-                    reg_cab.nroParesEstacoes--;
-                }
+                decrementar_hash(tabela, reg_dados.nomeEstacao, reg_dados.tamNomeEstacao);
+            }
+            
+            // Atualização dos pares de estações
+            if (reg_dados.codProxEstacao != -1) {
+                reg_cab->nroParesEstacoes--;
             }
         }
-        
     }
-
-    reg_cab.status = '0';
-    fseek(bin, 0, SEEK_SET);
-    escreve_cabecalho(bin, &reg_cab);
+        
+    if (ultimo == '1') reg_cab->status='1';
     
-    rrn_atual = 0;
-
-    for (i = 0; i < qtd_remocoes; i++) {
-        int rrn_alvo = rrns_remover[i];
-        
-        fseek(bin, calculo_byteoffset_dados(rrn_alvo), SEEK_SET);
-        
-         int topo_antigo = reg_cab.topo;
-    
-        //atualiza nossa 'pilha' de remoção
-        char removido = '1';
-        int prox_removido = topo_antigo;
-        
-        fwrite(&removido, sizeof(char), 1, bin);
-        fwrite(&prox_removido, sizeof(int), 1, bin);
-        //atualiza o topo 
-        reg_cab.topo = rrn_alvo;
-        rrn_atual++;
-    }
-
-
-    reg_cab.status = '1';
     fseek(bin, 0, SEEK_SET);
-    escreve_cabecalho(bin, &reg_cab);
-
-    free(rrns_remover);                          
+    escreve_cabecalho(bin, reg_cab);
+    
 }
 
 
@@ -385,7 +362,7 @@ void inserir_registro_dinamico(FILE *bin, NoHash *tabela[], cabecalho *cab, dado
 	long offset_insercao;
     int rrn_insercao;
     
-    if (bin == NULL || cab == NULL) {
+    if (bin == NULL ) {
         printf("Falha no processamento do arquivo.\n");
         return;
     }
@@ -405,29 +382,25 @@ void inserir_registro_dinamico(FILE *bin, NoHash *tabela[], cabecalho *cab, dado
     }
 
 	 if (cab->topo != -1) {
+
         rrn_insercao = cab->topo;
         offset_insercao= calculo_byteoffset_dados(rrn_insercao);
         
         fseek(bin, offset_insercao + 1, SEEK_SET);
-        int proximo_rrn_topo;
-		if (fread(&proximo_rrn_topo, sizeof(int), 1, bin) == 1) {
-            cab->topo = proximo_rrn_topo;
-        } else {
-            cab->topo = -1;
-        }
+        
+		int proximo_rrn_topo;
+        fread(&proximo_rrn_topo, sizeof(int), 1, bin);
+        
+        cab->topo = proximo_rrn_topo;
     } else {
         rrn_insercao = cab->proxRRN;
         offset_insercao = calculo_byteoffset_dados(rrn_insercao);
         cab->proxRRN++;
     }
 
-	reg_dados->removido ='0';
-	reg_dados->proximo = -1;
-
+	
 	fseek(bin, offset_insercao, SEEK_SET);
     escreve_regdados(bin, reg_dados);
-	
-	
 
 
 }

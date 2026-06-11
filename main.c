@@ -14,16 +14,15 @@ int main() {
     char nome_index[100];
 
     int n, i, j, m, p; 
-    cabecalho cab = cria_cabecalho();
-    FILE *bin;
+    cabecalho cab;
     inicializar_tabela(tabela);
 
     while (scanf("%d", &operacao) != EOF) {
         switch (operacao){
             case 1:
                 scanf("%s %s", nome_csv, nome_bin);
-
-                bin = abrir_para_escrita_binário(nome_bin);
+                //mesmo que o arquivo já exista - reescreve
+                FILE *bin = cria_escreve_binario(nome_bin);
                 FILE *csv = fopen(nome_csv, "r");
                 if (csv == NULL || bin == NULL) {
                     printf("Falha no processamento do arquivo.\n");
@@ -43,8 +42,8 @@ int main() {
                 fclose(bin);
                 fclose(csv);
                 BinarioNaTela(nome_bin);
-            break;
-        
+                break;  
+                    
             case 2:
                 scanf("%s", nome_bin);
                 
@@ -95,8 +94,13 @@ int main() {
             case 4:
                 
                 scanf("%s", nome_bin);
-                bin = abrir_para_escrita_binário(nome_bin);
                 // caso o arquivo for inexistente, mostra a saída pedida e limpa as estruturas
+                bin = abrir_para_escrita_binário(nome_bin);
+
+                if (!arquivo_ja_processado(lista_arquivos, nome_bin)) {
+                    adicionar_arquivo_processado(&lista_arquivos, nome_bin, NULL);
+                    carregar_nomes_no_hash(bin, tabela);
+                }
                 if (bin == NULL) {
                     printf("Falha no processamento do arquivo.\n");
                     liberar_tabela(tabela);
@@ -104,28 +108,33 @@ int main() {
                     return 0;
                 }
 
-    
                 ler_cabecalho(bin, &cab);
-                // começa o arquivo com inoperando
+                // começa o arquivo com inconsistente - inicia a escrita
+                
                 cab.status = '0';
                 fseek(bin, 0, SEEK_SET);
                 escreve_cabecalho(bin, &cab);
-
+                
                 scanf("%d", &n);
+
+
 
                 for (i = 0; i < n; i++) {
                     char nomesCampos[8][50];
                     char valoresCampos[8][200];
-
+                    char ultimo = '0';
                     scanf("%d", &m);
 
                     for (j = 0; j < m; j++) {
                         ler_par_campo_valor(nomesCampos[j], valoresCampos[j]);
                     }
-
-                    remover_registros_dinamico(bin, tabela, m, nomesCampos, valoresCampos);
+                    if (i == n - 1) {
+                        ultimo = '1';
+                    }
+                    remover_registros_dinamico(bin, tabela,&cab , m, nomesCampos, valoresCampos, ultimo);
                 }
-                    
+                
+                
                 fclose(bin);
                 BinarioNaTela(nome_bin);
                 break;
@@ -133,7 +142,7 @@ int main() {
 
 
             case 5:
-
+                int n,i;
                 scanf("%s %d", nome_bin, &n);
                 // obtém um ponteiro para o arquivo, abrindo um novo se necessário
                 bin = abrir_para_escrita_binário(nome_bin);
@@ -143,6 +152,10 @@ int main() {
                     liberar_tabela(tabela);
                     liberar_lista_arquivos(lista_arquivos);
                     return 0;
+                }
+                 if (!arquivo_ja_processado(lista_arquivos, nome_bin)) {
+                    adicionar_arquivo_processado(&lista_arquivos, nome_bin, NULL);
+                    carregar_nomes_no_hash(bin, tabela);
                 }
 
                 
@@ -155,7 +168,6 @@ int main() {
                     fclose(bin);
                     break;
                 }
-
                 cab_insercao.status = '0';
                 fseek(bin, 0, SEEK_SET);
                 escreve_cabecalho(bin, &cab_insercao);
@@ -163,11 +175,10 @@ int main() {
                 for (i = 0; i < n; i++) {
                     ler_e_inserir_registro(bin, tabela, &cab_insercao);
                 }
-
                 // volta a colocar o arquivo como funcional
-                cab.status = '1';
+                cab_insercao.status = '1'; 
                 fseek(bin, 0, SEEK_SET);
-                escreve_cabecalho(bin, &cab);
+                escreve_cabecalho(bin, &cab_insercao);
 
                 fclose(bin);
                 BinarioNaTela(nome_bin);
@@ -187,6 +198,10 @@ int main() {
                     liberar_tabela(tabela);
                     liberar_lista_arquivos(lista_arquivos);
                     return 0;
+                }
+                 if (!arquivo_ja_processado(lista_arquivos, nome_bin)) {
+                    adicionar_arquivo_processado(&lista_arquivos, nome_bin, NULL);
+                    carregar_nomes_no_hash(bin, tabela);
                 }
 
                 ler_cabecalho(bin, &cab);
@@ -263,11 +278,11 @@ int main() {
                     adicionar_arquivo_processado(&lista_arquivos, nome_bin, NULL);
                     carregar_nomes_no_hash(bin, tabela);
                 }
+
                 cab_indice ci;
                 ler_ind_cabecalho(index, &ci);
 
                 scanf("%d", &n);
-
                 for (i = 0; i < n; i++) {
                     char nomesCampos[8][50];
                     char valoresCampos[8][200];
