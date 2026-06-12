@@ -1,6 +1,7 @@
 #ifndef FUNCOES_H
 #define FUNCOES_H
 
+<<<<<<< HEAD
 #define MAX_LINHA_CSV 512
 #define TAM_REG 80
 #define TAM_CABECALHO 17
@@ -48,6 +49,34 @@ int arquivo_ja_processado(ArquivoAberto *lista, char *nome_bin);
 void adicionar_arquivo_processado(ArquivoAberto **lista, char *nome_bin);
 void liberar_lista_arquivos(ArquivoAberto *lista);
 void carregar_nomes_no_hash(FILE *bin, NoHash *tabela[]);
+=======
+#include "hash.h"
+#include "csv.h"
+
+
+
+
+void mostrar_binario_sequencial(FILE *bin);
+
+
+int verificar_criterios(int m, char nomesCampos[][50], char valoresCampos[][200], dados* reg_dados);
+void buscar_registros(FILE *bin, NoHash *tabela[], int m,char nomesCampos[][50], char valoresCampos[][200]);
+
+void ler_par_campo_valor(char *campo, char *valor);
+
+
+void remover_registros_dinamico(FILE *bin, NoHash *tabela[], cabecalho* reg, int  m,
+                                char nomesCampos[][50], char valoresCampos[][200], char ultimo);
+void inserir_registro_dinamico(FILE *bin, NoHash *tabela[], cabecalho *cab, dados *reg_dados); 
+void atualizar_registros_dinamico(FILE *bin, NoHash *tabela[], int m, char nomesBusca[][50], char valoresBusca[][200],
+                                    int p, char nomesAtualiza[][50], char valoresAtualiza[][200]);
+
+
+void ler_e_inserir_registro(FILE *arq_dados, NoHash *tabela[], cabecalho *cab);
+
+
+
+>>>>>>> ad50ee39c61771b70c2701147fcd4298c8c1bb9b
 
 #endif
 

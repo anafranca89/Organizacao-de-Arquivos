@@ -38,6 +38,11 @@ void adicionar_arquivo_processado(ArquivoAberto **lista, char *nome_bin, FILE *a
     *lista = novo;
 }
 
+<<<<<<< HEAD
+=======
+
+
+>>>>>>> ad50ee39c61771b70c2701147fcd4298c8c1bb9b
 void liberar_lista_arquivos(ArquivoAberto *lista) {
     ArquivoAberto *atual = lista;
 

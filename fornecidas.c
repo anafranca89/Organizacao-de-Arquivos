@@ -3,6 +3,11 @@
 #include <string.h>
 #include <ctype.h>
 
+<<<<<<< HEAD
+=======
+#include "fornecidas.h"
+
+>>>>>>> ad50ee39c61771b70c2701147fcd4298c8c1bb9b
 /*
  * Você não precisa entender o código dessa função.
  *
@@ -78,4 +83,8 @@ void ScanQuoteString(char *str) {
     } else { // EOF
         strcpy(str, "");
     }
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> ad50ee39c61771b70c2701147fcd4298c8c1bb9b

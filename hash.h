@@ -13,6 +13,10 @@ typedef struct ArquivoAberto {
     struct ArquivoAberto *prox;
 } ArquivoAberto;
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> ad50ee39c61771b70c2701147fcd4298c8c1bb9b
 typedef struct no_hash {
     char nome[100];
     int repeticoes;

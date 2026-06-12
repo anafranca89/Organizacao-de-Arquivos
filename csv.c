@@ -3,6 +3,11 @@
 #include <string.h>
 #include "csv.h"
 
+<<<<<<< HEAD
+=======
+
+
+>>>>>>> ad50ee39c61771b70c2701147fcd4298c8c1bb9b
 /*Avança o ponteiro, se encontrar uma virgula.
 Util para parse do arquivo csv.
 */

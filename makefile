@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 EXEC = executavel
 
 CC = gcc
@@ -22,3 +23,21 @@ run: $(EXEC)
 
 clean:
 	rm -f $(OBJ) $(EXEC)
+=======
+CC = gcc
+CFLAGS = -Wall -g
+TARGET = programaTrab
+
+all:
+	$(CC) $(CFLAGS) -o $(TARGET) *.c
+
+run:
+	./$(TARGET)
+
+clean:
+	rm -f *.o $(TARGET)
+
+
+
+.PHONY: all run clean
+>>>>>>> ad50ee39c61771b70c2701147fcd4298c8c1bb9b
