@@ -3,6 +3,8 @@
 #include <string.h>
 #include "csv.h"
 
+
+
 /*Avança o ponteiro, se encontrar uma virgula.
 Util para parse do arquivo csv.
 */

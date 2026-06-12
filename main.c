@@ -17,6 +17,7 @@ int main() {
     cabecalho cab;
     inicializar_tabela(tabela);
 
+    
     while (scanf("%d", &operacao) != EOF) {
         switch (operacao){
             case 1:

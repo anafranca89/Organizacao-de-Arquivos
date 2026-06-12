@@ -5,6 +5,8 @@
 #include "csv.h"
 
 
+
+
 void mostrar_binario_sequencial(FILE *bin);
 
 

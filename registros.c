@@ -58,6 +58,8 @@ FILE* abrir_para_escrita_binário(char *nome_arquivo) {
     return arq;
 }
 
+
+
 /* Construtor do Reg.Cabeçalho de Dados.
     Retorna a struct cabeçalho com os valores padrão de  NULOS.
 */

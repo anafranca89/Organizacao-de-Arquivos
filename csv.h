@@ -11,6 +11,7 @@
 int ler_registro_csv(FILE *csv, dados *reg_dados);
 void adicionar_csv_no_binario(FILE *arq_csv, FILE *arq_bin, NoHash *tabela[]);
 
+
 void ler_par_campo_valor(char *campo, char *valor);
 
 

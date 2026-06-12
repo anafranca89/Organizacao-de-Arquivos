@@ -26,6 +26,7 @@ registerParser((filePath) => {
     // ROTEAMENTO: Se o nome contiver "indice" ou "arv", desenha a Árvore B
     if (nome.includes('indice') || nome.includes('arv')|| nome.includes('tree')) {
         
+        
         // ==========================================
         // PARSER DA ÁRVORE-B (53 bytes)
         // ==========================================

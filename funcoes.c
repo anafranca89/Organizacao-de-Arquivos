@@ -52,6 +52,7 @@ int verificar_criterios(int m, char nomesCampos[][50], char valoresCampos[][200]
             }
         }
         
+        
         // os inteiros
         else if (strcmp(nomesCampos[i], "codEstacao") == 0) {
             if (strlen(valoresCampos[i]) == 0) { 
