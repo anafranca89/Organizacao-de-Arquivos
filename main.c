@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "arvb.h"
 #include "funcoes.h"
 
 int main() {
