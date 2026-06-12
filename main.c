@@ -246,6 +246,9 @@ int main() {
 
 
             case 7:
+            /*CREATE INDEX - cria um arquivo de indice seguindo a logica de arvore B.
+             - cria árvore precisa apenas do arquiv binário de dados e realiza essa função.
+            */
                 //recebe o nome dos arquivos de dados e de index, respectivamente
 
                 scanf("%s %s", nome_bin, nome_index);
@@ -263,7 +266,10 @@ int main() {
                 BinarioNaTela(nome_index);
                 break;
             case 8:
-
+                /*Busca usando a busca Arvore B.
+                - Mesma lógica do case 3. Lê os campos e valores a serem buscados
+                - Se o campo é chave do indice, o codEstacao, chama a busca de arvb.
+                */
                 scanf("%s %s", nome_bin, nome_index);
 
                 bin = ler_binario(nome_bin);
@@ -307,7 +313,11 @@ int main() {
 
                     fseek(index, 0, SEEK_SET);
 
-
+                    /*Se possui codEstacao - faz busca em arvore.
+                    Como ela retorna o rrn onde a busca terminou - precisa ler 
+                    esse indice, verificar se posição chave != -1, e imprime o registro
+                    Se não, faz a busca do case 3. 
+                    */
                     if(possui_cod_estacao){
                         //retorna o rrn da busca em arvoreB
                         int posicao_na_pagina=-1;
@@ -320,14 +330,13 @@ int main() {
                             fseek(index, calculo_byteoffset_indice(rrn_encontrado), SEEK_SET);
                             ler_indice(index, &no_atual);
 
-                            long byte_dados = -1;
+                            long byte_dados =  NEGATIVO;
                             if (posicao_na_pagina == 1) byte_dados = no_atual.Pr1;
                             else if (posicao_na_pagina == 2) byte_dados = no_atual.Pr2;
                             else if (posicao_na_pagina == 3) byte_dados = no_atual.Pr3;
 
-                            if (byte_dados != -1) {
-                                dados reg_dados;
-                                memset(&reg_dados, 0, sizeof(dados));
+                            if (byte_dados != NEGATIVO) {
+                                dados reg_dados = cria_dados();
                                 
                                 fseek(bin, byte_dados, SEEK_SET);
                                 ler_regdados(bin, &reg_dados);
