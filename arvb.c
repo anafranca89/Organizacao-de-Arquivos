@@ -144,118 +144,132 @@ Caso2: Arquivo existe --> apenas abre arquivo p/escrita
         - Atualiza cabeçalho da arvore
         - fecha arquivo
 */
-void cria_arvore(FILE* arq_dados, char*arq_index ){
+void cria_arvore(FILE* arq_dados, char* arq_index) {
 
     FILE* indexes = cria_escreve_binario(arq_index);
-    cab_indice index_cab = new_cab_indice();
-
-    
-    if(indexes == NULL){
-        indexes = cria_escreve_binario(arq_index);
-        // escrita inicial - status inconsistente
-        index_cab.status = '0';
-        escreve_ind_cabecalho(indexes, &index_cab);
-    }else{
-        ler_ind_cabecalho(indexes, &index_cab);
-        index_cab.status = '0';
-        fseek(indexes, 0, SEEK_SET);
-        escreve_ind_cabecalho(indexes, &index_cab);
+    if (indexes == NULL) {
+        printf("Falha no processamento do arquivo.\n");
+        return;
     }
 
+    cab_indice index_cab = new_cab_indice();
 
-    //ler o arquivo de dados
+    index_cab.status = '0';
+    fseek(indexes, 0, SEEK_SET);
+    escreve_ind_cabecalho(indexes, &index_cab);
+
     cabecalho reg_cab_dados = cria_cabecalho();
+
+    fseek(arq_dados, 0, SEEK_SET);
     ler_cabecalho(arq_dados, &reg_cab_dados);
 
-    if(reg_cab_dados.status == 0){
-        //status inconsistente ? --> Erro 
-        printf("Falha no processamento do arquivo.");
+    if (reg_cab_dados.status == '0') {
+        printf("Falha no processamento do arquivo.\n");
         fclose(indexes);
         return;
     }
-    //fseek(arq_dados, TAM_CABECALHO,SEEK_SET); o ponteiro já esta no final do cabeçalho :)
 
     dados reg_dados = cria_dados();
 
-    //leitura dos registros e inserção na arvore
-    for(int i=0; i<reg_cab_dados.proxRRN; i++){
+    for (int i = 0; i < reg_cab_dados.proxRRN; i++) {
 
         int byteoffset_dados = calculo_byteoffset_dados(i);
+
         fseek(arq_dados, byteoffset_dados, SEEK_SET);
-        // é removido?
         ler_regdados(arq_dados, &reg_dados);
-        if (reg_dados.removido =='1') continue; // o ponteiro do fseek já está no começo do registro i+1
-        int pos_chave_no = NEGATIVO;
-        busca_arvore(indexes, index_cab.noRaiz, reg_dados.codEstacao, &pos_chave_no);
 
-        if (pos_chave_no != NEGATIVO) {
-            continue; 
+        if (reg_dados.removido == '1') {
+            continue;
         }
-        //chave é unica - nao duplicada
-        int filho_promovido, chave_promovida, byte_dados_promovido;
 
-        int retorno_prom = insere_arvore(indexes, &index_cab, index_cab.noRaiz,  reg_dados.codEstacao, byteoffset_dados,     
-                     &filho_promovido, &chave_promovida,  &byte_dados_promovido);
-
-        if (retorno_prom == PROMOTION ){
-            //atualiza o tipo do no da raiz antiga --- importante pra busca!
-            int rrn_raiz_antiga = index_cab.noRaiz;
-
-            //se a arvore n estava vazia, atualiza a raiz
-            if(rrn_raiz_antiga != NEGATIVO){
-                int byte_raiz_antiga = calculo_byteoffset_indice(rrn_raiz_antiga);
-                indice raiz_antiga;
-                fseek(indexes, byte_raiz_antiga, SEEK_SET);
-                ler_indice(indexes, &raiz_antiga);
-
-                if (raiz_antiga.arv1 == NEGATIVO) {
-                    raiz_antiga.tipoNo = NEGATIVO; // Se não tem filhos, vira folha
-                } else {
-                    raiz_antiga.tipoNo = 1;        // Se tem filhos, vira intermediario
-                }
-            
-                fseek(indexes, byte_raiz_antiga, SEEK_SET);
-                escreve_indice(indexes, &raiz_antiga);
-            }
-            
-            // Cria nova raiz
-            indice nova_raiz = new_indice();
-        
-            nova_raiz.tipoNo = 0; 
-            nova_raiz.nroChaves = 1;
-            
-            nova_raiz.C1 = chave_promovida;
-            nova_raiz.Pr1 = byte_dados_promovido;
-            
-            // O filho esq é a raiz antiga - o filho_dir é o gerado no split
-            nova_raiz.arv1 = index_cab.noRaiz;
-            nova_raiz.arv2 = filho_promovido;
-            
-
-            int rrn_nova_raiz = index_cab.proxRRN;
-            
-            fseek(indexes, calculo_byteoffset_indice(rrn_nova_raiz), SEEK_SET);
-            escreve_indice(indexes, &nova_raiz);
-            
-            // atualiza o cabeçalho
-            index_cab.noRaiz = rrn_nova_raiz;
-            index_cab.proxRRN++;
-            index_cab.nroNos++;
-        }
-    
+        insere_recebendo_chave_e_byteoffset(
+            indexes,
+            &index_cab,
+            reg_dados.codEstacao,
+            byteoffset_dados
+        );
     }
 
     index_cab.status = '1';
     fseek(indexes, 0, SEEK_SET);
     escreve_ind_cabecalho(indexes, &index_cab);
-    
-    fclose(indexes); 
+
+    fclose(indexes);
 }
 
+void insere_recebendo_chave_e_byteoffset(FILE *indexes, cab_indice *index_cab, int chave, int byteoffset_dados) {
+    int pos_chave_no = NEGATIVO;
 
+    busca_arvore(indexes, index_cab->noRaiz, chave, &pos_chave_no);
 
+    if (pos_chave_no != NEGATIVO) {
+        return;
+    }
 
+    int filho_promovido;
+    int chave_promovida;
+    int byte_dados_promovido;
 
+    int retorno_prom = insere_arvore(
+        indexes,
+        index_cab,
+        index_cab->noRaiz,
+        chave,
+        byteoffset_dados,
+        &filho_promovido,
+        &chave_promovida,
+        &byte_dados_promovido
+    );
+
+    if (retorno_prom == PROMOTION) {
+
+        int rrn_raiz_antiga = index_cab->noRaiz;
+
+        if (rrn_raiz_antiga != NEGATIVO) {
+
+            int byte_raiz_antiga = calculo_byteoffset_indice(rrn_raiz_antiga);
+
+            indice raiz_antiga;
+
+            fseek(indexes, byte_raiz_antiga, SEEK_SET);
+            ler_indice(indexes, &raiz_antiga);
+
+            if (raiz_antiga.arv1 == NEGATIVO) {
+                raiz_antiga.tipoNo = NEGATIVO;
+            } else {
+                raiz_antiga.tipoNo = 1;
+            }
+
+            fseek(indexes, byte_raiz_antiga, SEEK_SET);
+            escreve_indice(indexes, &raiz_antiga);
+        }
+
+        indice nova_raiz = new_indice();
+
+        if (rrn_raiz_antiga == NEGATIVO) {
+            nova_raiz.tipoNo = NEGATIVO;
+        } else {
+            nova_raiz.tipoNo = 0;
+        }
+
+        nova_raiz.nroChaves = 1;
+
+        nova_raiz.C1 = chave_promovida;
+        nova_raiz.Pr1 = byte_dados_promovido;
+
+        nova_raiz.arv1 = rrn_raiz_antiga;
+        nova_raiz.arv2 = filho_promovido;
+
+        int rrn_nova_raiz = index_cab->proxRRN;
+
+        fseek(indexes, calculo_byteoffset_indice(rrn_nova_raiz), SEEK_SET);
+        escreve_indice(indexes, &nova_raiz);
+
+        index_cab->noRaiz = rrn_nova_raiz;
+        index_cab->proxRRN++;
+        index_cab->nroNos++;
+    }
+}
 
 /*Assumindo q existe o arquivo de indice existe e é != NULL.
 Busca uma chave única int - codEstacao-  num nó da árvore.
@@ -530,18 +544,53 @@ Parametros: arquivo de indezx, cabeçalho do index, rrn do no, o proprio no,
     - atualiza a chave a ser promovida e o filho a ser promovido 
     - organiza as chaves nos 2 nós e retorna a novapagina.
 */
-void split (FILE *arq_index, cab_indice *cab_ind, int rrn_no_ant, indice *no_ant, 
-           int chave, int byte_chave, int filho_chave,
-           int *chave_promovida, int *byte_promovido, int *filho_promovido ){
 
-    //estrutura para ordenar as chaves, subarvores e ponteiros.
+int alocar_rrn_no_arvore(FILE *arq_index, cab_indice *cab_ind) {
+    int rrn_alocado;
+
+    if (cab_ind->topo != NEGATIVO) {
+        indice no_removido;
+
+        rrn_alocado = cab_ind->topo;
+
+        fseek(arq_index, calculo_byteoffset_indice(rrn_alocado), SEEK_SET);
+        ler_indice(arq_index, &no_removido);
+
+        cab_ind->topo = no_removido.proximo;
+    } else {
+        rrn_alocado = cab_ind->proxRRN;
+        cab_ind->proxRRN++;
+    }
+
+    cab_ind->nroNos++;
+
+    return rrn_alocado;
+}
+
+void split(
+    FILE *arq_index,
+    cab_indice *cab_ind,
+    int rrn_no_ant,
+    indice *no_ant,
+    int chave,
+    int byte_chave,
+    int filho_chave,
+    int *chave_promovida,
+    int *byte_promovido,
+    int *filho_promovido
+) {
     int chaves_temp[4];
     int byte_temp[4];
     int arv_temp[5];
 
-    chaves_temp[0] = no_ant->C1; byte_temp[0] = no_ant->Pr1;
-    chaves_temp[1] = no_ant->C2; byte_temp[1] = no_ant->Pr2;
-    chaves_temp[2] = no_ant->C3; byte_temp[2] = no_ant->Pr3;
+    chaves_temp[0] = no_ant->C1;
+    byte_temp[0] = no_ant->Pr1;
+
+    chaves_temp[1] = no_ant->C2;
+    byte_temp[1] = no_ant->Pr2;
+
+    chaves_temp[2] = no_ant->C3;
+    byte_temp[2] = no_ant->Pr3;
 
     arv_temp[0] = no_ant->arv1;
     arv_temp[1] = no_ant->arv2;
@@ -549,11 +598,13 @@ void split (FILE *arq_index, cab_indice *cab_ind, int rrn_no_ant, indice *no_ant
     arv_temp[3] = no_ant->arv4;
 
     int i = 2;
+
     while (i >= 0 && chave < chaves_temp[i]) {
-        //shift os elementos para 'liberar' o espaço p/ chave inserida
         chaves_temp[i + 1] = chaves_temp[i];
         byte_temp[i + 1] = byte_temp[i];
-        arv_temp[i + 2] = arv_temp[i + 1]; 
+
+        arv_temp[i + 2] = arv_temp[i + 1];
+
         i--;
     }
 
@@ -563,70 +614,849 @@ void split (FILE *arq_index, cab_indice *cab_ind, int rrn_no_ant, indice *no_ant
 
     indice novo_no = new_indice();
 
-    //qual é o tipo do novo no?
     if (no_ant->tipoNo == 0) {
         if (no_ant->arv1 == NEGATIVO) {
-            no_ant->tipoNo = NEGATIVO;  // Vira folha
-            novo_no.tipoNo = NEGATIVO;  // Vira folha
+            no_ant->tipoNo = NEGATIVO;
+            novo_no.tipoNo = NEGATIVO;
         } else {
-            no_ant->tipoNo = 1;         // Vira intermediário
-            novo_no.tipoNo = 1;         // Vira intermediário
+            no_ant->tipoNo = 1;
+            novo_no.tipoNo = 1;
         }
     } else {
-        // Se não era raiz o novo nó  mantém o mesmo do antigo
         novo_no.tipoNo = no_ant->tipoNo;
     }
 
-
-    int rrn_novo_no = cab_ind->proxRRN;
-
-    //Distribuição dos valores
-    /*  chave 0, 1 -> nó antigo
-        chave 2, 3 -> novo no -> com chave 2  promovida
-    */
+    int rrn_novo_no = alocar_rrn_no_arvore(arq_index, cab_ind);
 
     no_ant->C1 = chaves_temp[0];
     no_ant->C2 = chaves_temp[1];
-    no_ant->C3 = NEGATIVO; //limpa os dados anteriores
-    //novo_no -chavepromovida  = chaves_temp[2];
+    no_ant->C3 = NEGATIVO;
+
     novo_no.C1 = chaves_temp[3];
     novo_no.C2 = NEGATIVO;
     novo_no.C3 = NEGATIVO;
 
-
     no_ant->Pr1 = byte_temp[0];
     no_ant->Pr2 = byte_temp[1];
-    no_ant->Pr3 = NEGATIVO;// limpa os dados anteriores
-    //novono  byte promovido -> byte_temp[2];
+    no_ant->Pr3 = NEGATIVO;
+
     novo_no.Pr1 = byte_temp[3];
     novo_no.Pr2 = NEGATIVO;
     novo_no.Pr3 = NEGATIVO;
 
-
     no_ant->arv1 = arv_temp[0];
     no_ant->arv2 = arv_temp[1];
     no_ant->arv3 = arv_temp[2];
-    no_ant->arv4 = NEGATIVO; //limpa dados
-    //novo_no filho promovido = rrn do novo no
+    no_ant->arv4 = NEGATIVO;
+
     novo_no.arv1 = arv_temp[3];
     novo_no.arv2 = arv_temp[4];
     novo_no.arv3 = NEGATIVO;
     novo_no.arv4 = NEGATIVO;
 
     no_ant->nroChaves = 2;
-    novo_no.nroChaves =1;
+    novo_no.nroChaves = 1;
+
+    novo_no.removido = '0';
+    novo_no.proximo = NEGATIVO;
 
     *chave_promovida = chaves_temp[2];
     *byte_promovido = byte_temp[2];
     *filho_promovido = rrn_novo_no;
 
-    //reescreve os nós 
     fseek(arq_index, calculo_byteoffset_indice(rrn_no_ant), SEEK_SET);
     escreve_indice(arq_index, no_ant);
 
     fseek(arq_index, calculo_byteoffset_indice(rrn_novo_no), SEEK_SET);
     escreve_indice(arq_index, &novo_no);
+}
 
-    cab_ind->proxRRN++;
-    cab_ind->nroNos++;
+void ler_no_arvore(FILE *index, int rrn, indice *no) {
+    fseek(index, calculo_byteoffset_indice(rrn), SEEK_SET);
+    ler_indice(index, no);
+}
+
+void escrever_no_arvore(FILE *index, int rrn, indice *no) {
+    fseek(index, calculo_byteoffset_indice(rrn), SEEK_SET);
+    escreve_indice(index, no);
+}
+
+int no_eh_folha(indice *no) {
+    return no->arv1 == NEGATIVO;
+}
+
+void inicializar_vetor_com_negativo(int *vet, int tam) {
+    int i;
+
+    for (i = 0; i < tam; i++) {
+        vet[i] = NEGATIVO;
+    }
+}
+
+void no_para_vetores(indice *no, int chaves[], int prs[], int filhos[]) {
+    chaves[0] = no->C1;
+    chaves[1] = no->C2;
+    chaves[2] = no->C3;
+
+    prs[0] = no->Pr1;
+    prs[1] = no->Pr2;
+    prs[2] = no->Pr3;
+
+    filhos[0] = no->arv1;
+    filhos[1] = no->arv2;
+    filhos[2] = no->arv3;
+    filhos[3] = no->arv4;
+}
+
+void vetores_para_no(indice *no, int nroChaves, int chaves[], int prs[], int filhos[]) {
+    no->nroChaves = nroChaves;
+
+    no->C1 = NEGATIVO;
+    no->C2 = NEGATIVO;
+    no->C3 = NEGATIVO;
+    no->Pr1 = NEGATIVO;
+    no->Pr2 = NEGATIVO;
+    no->Pr3 = NEGATIVO;
+    no->arv1 = NEGATIVO;
+    no->arv2 = NEGATIVO;
+    no->arv3 = NEGATIVO;
+    no->arv4 = NEGATIVO;
+
+    if (nroChaves >= 1) {
+        no->C1 = chaves[0];
+        no->Pr1 = prs[0];
+    }
+
+    if (nroChaves >= 2) {
+        no->C2 = chaves[1];
+        no->Pr2 = prs[1];
+    }
+
+    if (nroChaves >= 3) {
+        no->C3 = chaves[2];
+        no->Pr3 = prs[2];
+    }
+
+    no->arv1 = filhos[0];
+
+    if (nroChaves >= 1) no->arv2 = filhos[1];
+    if (nroChaves >= 2) no->arv3 = filhos[2];
+
+    if (nroChaves >= 3) no->arv4 = filhos[3];
+}
+
+void atualizar_tipo_no(indice *no, cab_indice *cab_index, int rrn) {
+    if (no_eh_folha(no)) {
+        no->tipoNo = NEGATIVO;
+    } else if (rrn == cab_index->noRaiz) {
+        no->tipoNo = 0;
+    } else {
+        no->tipoNo = 1;
+    }
+}
+
+int posicao_chave_no(indice *no, int chave) {
+    if (no->nroChaves >= 1 && no->C1 == chave) return 0;
+
+    if (no->nroChaves >= 2 && no->C2 == chave) return 1;
+
+    if (no->nroChaves >= 3 && no->C3 == chave) return 2;
+
+    return NEGATIVO;
+}
+
+int posicao_filho_para_chave(indice *no, int chave) {
+    if (no->nroChaves == 0) return 0;
+
+    if (chave < no->C1) return 0;
+    if (no->nroChaves == 1 || chave < no->C2) return 1;
+    if (no->nroChaves == 2 || chave < no->C3) return 2;
+    return 3;
+}
+
+int obter_filho(indice *no, int pos) {
+    if (pos == 0) return no->arv1;
+    if (pos == 1) return no->arv2;
+    if (pos == 2) return no->arv3;
+    return no->arv4;
+}
+
+void remover_chave_da_pagina(indice *no, int pos) {
+    int chaves[3];
+    int prs[3];
+    int filhos[4];
+    int i;
+
+    no_para_vetores(no, chaves, prs, filhos);
+
+    for (i = pos; i < no->nroChaves - 1; i++) {
+        chaves[i] = chaves[i + 1];
+        prs[i] = prs[i + 1];
+    }
+
+    chaves[no->nroChaves - 1] = NEGATIVO;
+    prs[no->nroChaves - 1] = NEGATIVO;
+
+    vetores_para_no(no, no->nroChaves - 1, chaves, prs, filhos);
+}
+
+void remover_chave_e_filho_direito(indice *pai, int pos_chave) {
+    int chaves[3];
+    int prs[3];
+    int filhos[4];
+    int i;
+    int n;
+
+    no_para_vetores(pai, chaves, prs, filhos);
+
+    n = pai->nroChaves;
+
+    for (i = pos_chave; i < n - 1; i++) {
+        chaves[i] = chaves[i + 1];
+        prs[i] = prs[i + 1];
+    }
+
+    chaves[n - 1] = NEGATIVO;
+    prs[n - 1] = NEGATIVO;
+
+    for (i = pos_chave + 1; i < n; i++) {
+        filhos[i] = filhos[i + 1];
+    }
+
+    filhos[n] = NEGATIVO;
+
+    vetores_para_no(pai, n - 1, chaves, prs, filhos);
+}
+
+void setar_chave_no_pai(indice *pai, int pos, int chave, int pr) {
+    if (pos == 0) {
+        pai->C1 = chave;
+        pai->Pr1 = pr;
+    } else if (pos == 1) {
+        pai->C2 = chave;
+        pai->Pr2 = pr;
+    } else {
+        pai->C3 = chave;
+        pai->Pr3 = pr;
+    }
+}
+
+int get_chave(indice *no, int pos) {
+    if (pos == 0) return no->C1;
+    if (pos == 1) return no->C2;
+    return no->C3;
+}
+
+int get_pr(indice *no, int pos) {
+    if (pos == 0) return no->Pr1;
+    if (pos == 1) return no->Pr2;
+    return no->Pr3;
+}
+
+void empilhar_no_removido_arvore(FILE *index, cab_indice *cab_index, int rrn_removido) {
+    indice no_removido;
+
+    if (rrn_removido == NEGATIVO) {
+        return;
+    }
+
+    ler_no_arvore(index, rrn_removido, &no_removido);
+
+    no_removido.removido = '1';
+    no_removido.proximo = cab_index->topo;
+
+    escrever_no_arvore(index, rrn_removido, &no_removido);
+
+    cab_index->topo = rrn_removido;
+
+    if (cab_index->nroNos > 0) {
+        cab_index->nroNos--;
+    }
+}
+
+// função para encontrar menor chave da subárvore
+void encontrar_sucessor(FILE *index, int rrn, int *chave_sucessora, int *pr_sucessor) {
+    indice no_atual;
+    int rrn_atual;
+
+    rrn_atual = rrn;
+
+    while (rrn_atual != NEGATIVO) {
+        ler_no_arvore(index, rrn_atual, &no_atual);
+
+        if (no_eh_folha(&no_atual)) {
+            *chave_sucessora = no_atual.C1;
+            *pr_sucessor = no_atual.Pr1;
+            return;
+        }
+
+        rrn_atual = no_atual.arv1;
+    }
+
+    *chave_sucessora = NEGATIVO;
+    *pr_sucessor = NEGATIVO;
+}
+
+void redistribuir_entre_nos(FILE *index,cab_indice *cab_index,int rrn_esq,int rrn_pai,int pos_chave_pai,int rrn_dir) {
+    indice esq;
+    indice dir;
+    indice pai;
+
+    int chaves_esq[3], prs_esq[3], filhos_esq[4];
+    int chaves_dir[3], prs_dir[3], filhos_dir[4];
+
+    int todas_chaves[7];
+    int todos_prs[7];
+    int todos_filhos[8];
+
+    int novas_chaves_esq[3];
+    int novos_prs_esq[3];
+    int novos_filhos_esq[4];
+
+    int novas_chaves_dir[3];
+    int novos_prs_dir[3];
+    int novos_filhos_dir[4];
+
+    int total_chaves;
+    int qtd_esq;
+    int qtd_dir;
+    int i;
+    int k;
+    int folha;
+
+    ler_no_arvore(index, rrn_esq, &esq);
+    ler_no_arvore(index, rrn_dir, &dir);
+    ler_no_arvore(index, rrn_pai, &pai);
+
+    no_para_vetores(&esq, chaves_esq, prs_esq, filhos_esq);
+    no_para_vetores(&dir, chaves_dir, prs_dir, filhos_dir);
+
+    inicializar_vetor_com_negativo(todas_chaves, 7);
+    inicializar_vetor_com_negativo(todos_prs, 7);
+    inicializar_vetor_com_negativo(todos_filhos, 8);
+    inicializar_vetor_com_negativo(novas_chaves_esq, 3);
+    inicializar_vetor_com_negativo(novos_prs_esq, 3);
+    inicializar_vetor_com_negativo(novos_filhos_esq, 4);
+    inicializar_vetor_com_negativo(novas_chaves_dir, 3);
+    inicializar_vetor_com_negativo(novos_prs_dir, 3);
+    inicializar_vetor_com_negativo(novos_filhos_dir, 4);
+
+    k = 0;
+
+    for (i = 0; i < esq.nroChaves; i++) {
+        todas_chaves[k] = chaves_esq[i];
+        todos_prs[k] = prs_esq[i];
+        k++;
+    }
+
+    todas_chaves[k] = get_chave(&pai, pos_chave_pai);
+    todos_prs[k] = get_pr(&pai, pos_chave_pai);
+    k++;
+
+    for (i = 0; i < dir.nroChaves; i++) {
+        todas_chaves[k] = chaves_dir[i];
+        todos_prs[k] = prs_dir[i];
+        k++;
+    }
+
+    total_chaves = k;
+
+    folha = no_eh_folha(&esq) && no_eh_folha(&dir);
+
+    if (!folha) {
+        k = 0;
+
+        for (i = 0; i <= esq.nroChaves; i++) {
+            todos_filhos[k] = filhos_esq[i];
+            k++;
+        }
+
+        for (i = 0; i <= dir.nroChaves; i++) {
+            todos_filhos[k] = filhos_dir[i];
+            k++;
+        }
+    }
+
+    qtd_esq = total_chaves / 2;
+    qtd_dir = total_chaves - qtd_esq - 1;
+
+    for (i = 0; i < qtd_esq; i++) {
+        novas_chaves_esq[i] = todas_chaves[i];
+        novos_prs_esq[i] = todos_prs[i];
+    }
+
+    setar_chave_no_pai(
+        &pai,
+        pos_chave_pai,
+        todas_chaves[qtd_esq],
+        todos_prs[qtd_esq]
+    );
+
+    for (i = 0; i < qtd_dir; i++) {
+        novas_chaves_dir[i] = todas_chaves[qtd_esq + 1 + i];
+        novos_prs_dir[i] = todos_prs[qtd_esq + 1 + i];
+    }
+
+    if (!folha) {
+        for (i = 0; i <= qtd_esq; i++) {
+            novos_filhos_esq[i] = todos_filhos[i];
+        }
+
+        for (i = 0; i <= qtd_dir; i++) {
+            novos_filhos_dir[i] = todos_filhos[qtd_esq + 1 + i];
+        }
+    }
+
+    vetores_para_no(&esq, qtd_esq, novas_chaves_esq, novos_prs_esq, novos_filhos_esq);
+    vetores_para_no(&dir, qtd_dir, novas_chaves_dir, novos_prs_dir, novos_filhos_dir);
+    atualizar_tipo_no(&esq, cab_index, rrn_esq);
+    atualizar_tipo_no(&dir, cab_index, rrn_dir);
+    atualizar_tipo_no(&pai, cab_index, rrn_pai);
+    escrever_no_arvore(index, rrn_esq, &esq);
+    escrever_no_arvore(index, rrn_dir, &dir);
+    escrever_no_arvore(index, rrn_pai, &pai);
+}
+
+void concatenar_nos(FILE *index,cab_indice *cab_index,int rrn_esq,int rrn_pai,int pos_chave_pai,int rrn_dir) {
+    indice esq;
+    indice dir;
+    indice pai;
+
+    int chaves_esq[3], prs_esq[3], filhos_esq[4];
+    int chaves_dir[3], prs_dir[3], filhos_dir[4];
+
+    int novas_chaves[3];
+    int novos_prs[3];
+    int novos_filhos[4];
+
+    int i;
+    int k;
+    int folha;
+
+    ler_no_arvore(index, rrn_esq, &esq);
+    ler_no_arvore(index, rrn_dir, &dir);
+    ler_no_arvore(index, rrn_pai, &pai);
+
+    no_para_vetores(&esq, chaves_esq, prs_esq, filhos_esq);
+    no_para_vetores(&dir, chaves_dir, prs_dir, filhos_dir);
+
+    inicializar_vetor_com_negativo(novas_chaves, 3);
+    inicializar_vetor_com_negativo(novos_prs, 3);
+    inicializar_vetor_com_negativo(novos_filhos, 4);
+
+    k = 0;
+
+    for (i = 0; i < esq.nroChaves; i++) {
+        novas_chaves[k] = chaves_esq[i];
+        novos_prs[k] = prs_esq[i];
+        k++;
+    }
+
+    novas_chaves[k] = get_chave(&pai, pos_chave_pai);
+    novos_prs[k] = get_pr(&pai, pos_chave_pai);
+    k++;
+
+    for (i = 0; i < dir.nroChaves; i++) {
+        novas_chaves[k] = chaves_dir[i];
+        novos_prs[k] = prs_dir[i];
+        k++;
+    }
+
+    folha = no_eh_folha(&esq) && no_eh_folha(&dir);
+
+    if (!folha) {
+        k = 0;
+
+        for (i = 0; i <= esq.nroChaves; i++) {
+            novos_filhos[k] = filhos_esq[i];
+            k++;
+        }
+
+        for (i = 0; i <= dir.nroChaves; i++) {
+            novos_filhos[k] = filhos_dir[i];
+            k++;
+        }
+    }
+
+    vetores_para_no(&esq, esq.nroChaves + 1 + dir.nroChaves, novas_chaves, novos_prs, novos_filhos);
+
+    atualizar_tipo_no(&esq, cab_index, rrn_esq);
+
+    remover_chave_e_filho_direito(&pai, pos_chave_pai);
+    atualizar_tipo_no(&pai, cab_index, rrn_pai);
+
+    escrever_no_arvore(index, rrn_esq, &esq);
+    escrever_no_arvore(index, rrn_pai, &pai);
+
+    // a página destruída é sempre a da direita
+    empilhar_no_removido_arvore(index, cab_index, rrn_dir);
+}
+
+
+// função para corrigir underflow no nó filho(isto é, quando tem menos chaves que o mínimo), aqui damos um exemplos possíveis
+/* Primeiro caso de correção de underflow, pegando do filho a direita
+     [3, 4]
+[1, 2]  []  [5, 6]
+
+corrigi para 
+
+     [3, 5]
+[1, 2]  [4]  [6]
+
+
+Segundo caso de correção de underflow, pegando do filho a direita
+corrigi para 
+    [3, 4]
+[1, 2]  []  [5]
+
+Corrigi para 
+    [2, 4]
+[1]  [3]  [5]
+
+
+Terceiro caso de correção de underflow, concatenando com o filha a esquerda
+    [2, 3]
+[1]  []  [4]
+
+corrigi para 
+
+    [3]
+[1, 2]  [4]
+
+
+Quarto  caso de correção de underflow, pegando do filho a direita
+    [1, 3]
+[]  [2]  [4]
+
+corrigi para:
+
+    [3]
+[1, 2]  [4]
+
+Mas e se ter underflow do nó de cima? aí entra a lógica recursiva!
+    [1]
+[]  [2]  [4]
+
+vai para:
+        [5, 6]
+    []          [7, 8]
+[1, 2] [4]
+
+vai para:
+        [6, 7]
+    [5]          [8]
+[1, 2] [4]
+*/
+
+// função para corrigir underflow no nó filho(isto é, quando tem menos chaves que o mínimo)
+void corrigir_underflow_filho(FILE *index, cab_indice *cab_index, int rrn_pai,int pos_filho) {
+    indice pai;
+    indice irmao;
+    int filhos[4];
+    int chaves[3];
+    int prs[3];
+    int rrn_filho;
+    int rrn_irmao_dir;
+    int rrn_irmao_esq;
+
+    ler_no_arvore(index, rrn_pai, &pai);
+    no_para_vetores(&pai, chaves, prs, filhos);
+
+    rrn_filho = filhos[pos_filho];
+
+    // tentamos redistribuir com a página a direita
+    if (pos_filho < pai.nroChaves) {
+        rrn_irmao_dir = filhos[pos_filho + 1];
+
+        if (rrn_irmao_dir != NEGATIVO) {
+            ler_no_arvore(index, rrn_irmao_dir, &irmao);
+
+            if (irmao.nroChaves > MIN_CHAVES_B) {
+                redistribuir_entre_nos(index,cab_index,rrn_filho,rrn_pai,pos_filho,rrn_irmao_dir);
+
+                return;
+            }
+        }
+    }
+    // tentamos redistribuir com a página a esquerda
+    if (pos_filho > 0) {
+        rrn_irmao_esq = filhos[pos_filho - 1];
+
+        if (rrn_irmao_esq != NEGATIVO) {
+            ler_no_arvore(index, rrn_irmao_esq, &irmao);
+
+            if (irmao.nroChaves > MIN_CHAVES_B) {
+                redistribuir_entre_nos(index,cab_index,rrn_irmao_esq,rrn_pai,pos_filho - 1,rrn_filho);
+
+                return;
+            }
+        }
+    }
+    // senão der certo, concatena com a esquerda
+    if (pos_filho > 0) {
+        rrn_irmao_esq = filhos[pos_filho - 1];
+
+        concatenar_nos(
+            index,
+            cab_index,
+            rrn_irmao_esq,
+            rrn_pai,
+            pos_filho - 1,
+            rrn_filho
+        );
+
+        return;
+    }
+
+    // senão der certo, concatena com a direira
+    if (pos_filho < pai.nroChaves) {
+        rrn_irmao_dir = filhos[pos_filho + 1];
+
+        concatenar_nos(index,cab_index,rrn_filho,rrn_pai,pos_filho,rrn_irmao_dir);
+    }
+}
+
+// Função principal para a remoção, ela desce até as folhas e depois volta corrigindo
+// o retorno da função indica se houve underflow
+int remover_recursivo_arvore(FILE *index, cab_indice *cab_index, int rrn_atual, int chave,int eh_raiz) {
+    indice no_atual;
+    int pos_chave;
+    int pos_filho;
+    int rrn_filho;
+    int chave_sucessora;
+    int pr_sucessor;
+    int houve_underflow;
+    // caso base da árvore, já chegamos no final (indicado pello rnn negativo), então acabou a recursão
+    if (rrn_atual == NEGATIVO) {
+        return 0;
+    }
+    // começa lendo o no dá arvore
+    ler_no_arvore(index, rrn_atual, &no_atual);
+    // se ele está removido não precisamo mexer nele
+    if (no_atual.removido == '1') {
+        return 0;
+    }
+
+    pos_chave = posicao_chave_no(&no_atual, chave);
+    // primeiro caso, chava está no nó atual
+    if (pos_chave != NEGATIVO) {
+        // Caso A, caso o nó for folha
+        if (no_eh_folha(&no_atual)) {
+            // Removemos o nó, verificando se deu underflow ou não
+            remover_chave_da_pagina(&no_atual, pos_chave);
+            atualizar_tipo_no(&no_atual, cab_index, rrn_atual);
+            escrever_no_arvore(index, rrn_atual, &no_atual);
+
+            if (!eh_raiz && no_atual.nroChaves < MIN_CHAVES_B) return 1;
+            return 0;
+        }
+
+        // Caso B, a chave não está na raiz
+        rrn_filho = obter_filho(&no_atual, pos_chave + 1);
+        // encontra o sucessor na subárvore dada
+        encontrar_sucessor(index,rrn_filho,&chave_sucessora,&pr_sucessor);
+
+        if (chave_sucessora == NEGATIVO) return 0;
+        setar_chave_no_pai(&no_atual, pos_chave, chave_sucessora, pr_sucessor);
+        escrever_no_arvore(index, rrn_atual, &no_atual);
+
+        houve_underflow = remover_recursivo_arvore(
+            index,
+            cab_index,
+            rrn_filho,
+            chave_sucessora,
+            0
+        );
+
+        if (houve_underflow) {
+            corrigir_underflow_filho(
+                index,
+                cab_index,
+                rrn_atual,
+                pos_chave + 1
+            );
+        }
+
+        ler_no_arvore(index, rrn_atual, &no_atual);
+
+        if (!eh_raiz && no_atual.nroChaves < MIN_CHAVES_B) return 1;
+        return 0;
+    }
+
+    // segundo caso, chave não está no nó atual, então deveremos decidir para onde descer
+
+    // o nó é folha, então não precisamos mais descer
+    if (no_eh_folha(&no_atual)) {
+        return 0;
+    }
+
+    pos_filho = posicao_filho_para_chave(&no_atual, chave);
+    rrn_filho = obter_filho(&no_atual, pos_filho);
+
+    if (rrn_filho == NEGATIVO) {
+        return 0;
+    }
+    
+    houve_underflow = remover_recursivo_arvore(
+        index,
+        cab_index,
+        rrn_filho,
+        chave,
+        0
+    );
+
+    if (houve_underflow) {
+        corrigir_underflow_filho(
+            index,
+            cab_index,
+            rrn_atual,
+            pos_filho
+        );
+    }
+
+    ler_no_arvore(index, rrn_atual, &no_atual);
+
+    if (!eh_raiz && no_atual.nroChaves < MIN_CHAVES_B) {
+        return 1;
+    }
+
+    return 0;
+}
+
+void ajustar_raiz_apos_remocao(FILE *index, cab_indice *cab_index) {
+    indice raiz;
+    indice nova_raiz;
+    int rrn_raiz_antiga;
+    int rrn_nova_raiz;
+
+    if (cab_index->noRaiz == NEGATIVO) {
+        return;
+    }
+
+    rrn_raiz_antiga = cab_index->noRaiz;
+
+    ler_no_arvore(index, rrn_raiz_antiga, &raiz);
+
+    if (raiz.nroChaves > 0) {
+        atualizar_tipo_no(&raiz, cab_index, rrn_raiz_antiga);
+        escrever_no_arvore(index, rrn_raiz_antiga, &raiz);
+        return;
+    }
+
+     
+    // Raiz ficou vazia e era folha: árvore vazia.
+    if (no_eh_folha(&raiz)) {
+        empilhar_no_removido_arvore(index, cab_index, rrn_raiz_antiga);
+        cab_index->noRaiz = NEGATIVO;
+        return;
+    }
+
+    // Raiz ficou vazia, mas tem um filho.
+    // Esse filho vira a nova raiz.
+    rrn_nova_raiz = raiz.arv1;
+
+    empilhar_no_removido_arvore(index, cab_index, rrn_raiz_antiga);
+
+    cab_index->noRaiz = rrn_nova_raiz;
+
+    if (rrn_nova_raiz != NEGATIVO) {
+        ler_no_arvore(index, rrn_nova_raiz, &nova_raiz);
+        atualizar_tipo_no(&nova_raiz, cab_index, rrn_nova_raiz);
+        escrever_no_arvore(index, rrn_nova_raiz, &nova_raiz);
+    }
+}
+
+void remove_chave_arvore(FILE *index,cab_indice *cab_index,int chave) {
+    int pos_chave;
+
+    if (index == NULL || cab_index == NULL) return;
+        
+    if (cab_index->noRaiz == NEGATIVO) return;
+
+    pos_chave = NEGATIVO;
+    // busca na árvore e verifica se a chave existe para chamar a raiz
+    busca_arvore(
+        index,
+        cab_index->noRaiz,
+        chave,
+        &pos_chave
+    );
+    if (pos_chave == NEGATIVO) return;
+    // função principal da remoção 
+    remover_recursivo_arvore(index,cab_index,cab_index->noRaiz,chave,1);
+    // precisamos cuidar da raiz, já que ela é um caso especial (não tem pai) e não vai ser tratado no código recursivo
+    ajustar_raiz_apos_remocao(index, cab_index);
+}
+
+// função para remover registros dinãmico usando a árvore
+void remover_registros_dinamico_com_arvore(FILE *bin,FILE *index,NoHash *tabela[],cabecalho *reg_cab,cab_indice *cab_index,int m,char nomesCampos[][50],char valoresCampos[][200]) {
+    int rrn_atual;
+    dados reg_dados;
+
+    if (bin == NULL || index == NULL) {
+        printf("Falha no processamento do arquivo.\n");
+        return;
+    }
+    for (rrn_atual = 0; rrn_atual < reg_cab->proxRRN; rrn_atual++) {
+        int ok;
+
+        reg_dados = cria_dados();
+
+        fseek(bin, calculo_byteoffset_dados(rrn_atual), SEEK_SET);
+        ler_regdados(bin, &reg_dados);
+
+        if (reg_dados.removido == '1') {
+            continue;
+        }
+
+        ok = verificar_criterios(
+            m,
+            nomesCampos,
+            valoresCampos,
+            &reg_dados
+        );
+
+        if (ok) {
+            int topo_antigo = reg_cab->topo;
+
+            // primeiro remove da árvore
+            if (reg_dados.codEstacao != -1) {
+                remove_chave_arvore(
+                    index,
+                    cab_index,
+                    reg_dados.codEstacao
+                );
+            }
+
+            reg_dados.removido = '1';
+            reg_dados.proximo = topo_antigo;
+
+            fseek(bin, calculo_byteoffset_dados(rrn_atual), SEEK_SET);
+            escreve_regdados(bin, &reg_dados);
+
+            reg_cab->topo = rrn_atual;
+            // trata o hashing
+            if (reg_dados.tamNomeEstacao > 0) {
+                NoHash *h = buscar_hash(
+                    tabela,
+                    reg_dados.nomeEstacao,
+                    reg_dados.tamNomeEstacao
+                );
+
+                if (h != NULL && h->repeticoes == 1) {
+                    reg_cab->nroEstacoes--;
+                }
+
+                decrementar_hash(
+                    tabela,
+                    reg_dados.nomeEstacao,
+                    reg_dados.tamNomeEstacao
+                );
+            }
+
+            if (reg_dados.codProxEstacao != -1) {
+                reg_cab->nroParesEstacoes--;
+            }
+        }
+    }
 }
