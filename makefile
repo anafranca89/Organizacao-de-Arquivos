@@ -11,6 +11,4 @@ run:
 clean:
 	rm -f *.o $(TARGET)
 
-
-
 .PHONY: all run clean

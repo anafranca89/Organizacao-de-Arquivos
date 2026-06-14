@@ -18,7 +18,6 @@ typedef struct reg_cabecalho{
 }cabecalho;
 
 
-
 typedef struct reg_dados{
     char removido; 
     int proximo;
