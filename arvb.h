@@ -6,6 +6,9 @@
 #define PROMOTION 1
 #define NO_PROMOTION 0
 
+#define MIN_CHAVES_B 1
+#define MAX_CHAVES_B 3
+
 //Funções que definem a arvore B, como busca, inserção e remoção
 //Para isso precisamos do arquivo de indices e struct de indices.
 
@@ -62,4 +65,26 @@ void insere_ordenado_no(indice *no, int chave, int filho_promovido,  int byte_po
 void split (FILE *arq_index, cab_indice *cab_ind, int rrn_no_ant, indice *no_ant, 
            int chave, int byte_chave, int filho_chave,
            int *chave_promovida, int *byte_promovido, int *filho_promovido );
+
+void insere_recebendo_chave_e_byteoffset(FILE *indexes, cab_indice *index_cab, int chave, int byteoffset_dados);
+
+void remove_chave_arvore(
+    FILE *index,
+    cab_indice *cab_index,
+    int chave
+);
+
+void remover_registros_dinamico_com_arvore(
+    FILE *bin,
+    FILE *index,
+    NoHash *tabela[],
+    cabecalho *reg_cab,
+    cab_indice *cab_index,
+    int m,
+    char nomesCampos[][50],
+    char valoresCampos[][200]
+);
+
+int alocar_rrn_no_arvore(FILE *arq_index, cab_indice *cab_ind);
+
 #endif
