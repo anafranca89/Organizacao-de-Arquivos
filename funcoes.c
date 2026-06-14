@@ -52,7 +52,6 @@ int verificar_criterios(int m, char nomesCampos[][50], char valoresCampos[][200]
             }
         }
         
-        
         // os inteiros
         else if (strcmp(nomesCampos[i], "codEstacao") == 0) {
             if (strlen(valoresCampos[i]) == 0) { 
@@ -240,44 +239,18 @@ void mostrar_binario_sequencial(FILE *bin){
 
 */
 
-void ler_e_inserir_registro(FILE *bin, NoHash *tabela[], cabecalho *reg_cabecalho) {
+long ler_e_inserir_registro(FILE *bin, NoHash *tabela[], cabecalho *reg_cabecalho) {
+    dados reg_dados;
 
-    dados reg_dados= cria_dados();
+    ler_registro_entrada(&reg_dados);
 
-    char strCodEstacao[50], strCodLinha[50], strCodProxEstacao[50], strDistProxEstacao[50];
-    char strCodLinhaIntegra[50], strCodEstIntegra[50];
-
-    // Faz a leitura sequencial de todos os campos 
-    scanf("%s", strCodEstacao);
-    ScanQuoteString(reg_dados.nomeEstacao);
-    scanf("%s", strCodLinha);
-    ScanQuoteString(reg_dados.nomeLinha);
-    scanf("%s", strCodProxEstacao);
-    scanf("%s", strDistProxEstacao);
-    scanf("%s", strCodLinhaIntegra);
-    scanf("%s", strCodEstIntegra);
-
-    // converte os campos caso eles sejam nulos para -1
-    
-    reg_dados.codEstacao      = (strcasecmp(strCodEstacao, "NULO") == 0) ? -1 : atoi(strCodEstacao);
-    reg_dados.codLinha        = (strcasecmp(strCodLinha, "NULO") == 0) ? -1 : atoi(strCodLinha);
-    reg_dados.codProxEstacao  = (strcasecmp(strCodProxEstacao, "NULO") == 0) ? -1 : atoi(strCodProxEstacao);
-    reg_dados.distProxEstacao = (strcasecmp(strDistProxEstacao, "NULO") == 0) ? -1 : atoi(strDistProxEstacao);
-    reg_dados.codLinhaIntegra = (strcasecmp(strCodLinhaIntegra, "NULO") == 0) ? -1 : atoi(strCodLinhaIntegra);
-    reg_dados.codEstIntegra   = (strcasecmp(strCodEstIntegra, "NULO") == 0) ? -1 : atoi(strCodEstIntegra);
-
-    //definir o tamanho com o strlen - sem o \0
-    reg_dados.tamNomeEstacao = strlen(reg_dados.nomeEstacao);
-    reg_dados.tamNomeLinha   = strlen(reg_dados.nomeLinha);
-    
-   reg_dados.removido = '0';
-    reg_dados.proximo = -1;
-
-    inserir_registro_dinamico(bin, tabela, reg_cabecalho, &reg_dados);
+    return inserir_registro_dinamico(
+        bin,
+        tabela,
+        reg_cabecalho,
+        &reg_dados
+    );
 }
-
-
-
 
 
 
@@ -353,60 +326,6 @@ void remover_registros_dinamico(FILE *bin, NoHash *tabela[],cabecalho *reg_cab, 
     escreve_cabecalho(bin, reg_cab);
     
 }
-
-
-
-
-void inserir_registro_dinamico(FILE *bin, NoHash *tabela[], cabecalho *cab, dados *reg_dados){
-	
-	
-	long offset_insercao;
-    int rrn_insercao;
-    
-    if (bin == NULL ) {
-        printf("Falha no processamento do arquivo.\n");
-        return;
-    }
-
-
-    if (reg_dados->tamNomeEstacao> 0) {
-        NoHash *h = buscar_hash(tabela, reg_dados->nomeEstacao, reg_dados->tamNomeEstacao);
-        
-        if (h == NULL) {
-            cab->nroEstacoes++;
-        }
-
-        inserir_hash(tabela, reg_dados->nomeEstacao, reg_dados->tamNomeEstacao);
-    }
-    if (reg_dados->codProxEstacao != -1) {
-        cab->nroParesEstacoes++;
-    }
-
-	 if (cab->topo != -1) {
-
-        rrn_insercao = cab->topo;
-        offset_insercao= calculo_byteoffset_dados(rrn_insercao);
-        
-        fseek(bin, offset_insercao + 1, SEEK_SET);
-        
-		int proximo_rrn_topo;
-        fread(&proximo_rrn_topo, sizeof(int), 1, bin);
-        
-        cab->topo = proximo_rrn_topo;
-    } else {
-        rrn_insercao = cab->proxRRN;
-        offset_insercao = calculo_byteoffset_dados(rrn_insercao);
-        cab->proxRRN++;
-    }
-
-	
-	fseek(bin, offset_insercao, SEEK_SET);
-    escreve_regdados(bin, reg_dados);
-
-
-}
-
-
 
 
 void atualizar_registros_dinamico(FILE *bin, NoHash *tabela[],
@@ -543,4 +462,114 @@ void atualizar_registros_dinamico(FILE *bin, NoHash *tabela[],
     escreve_cabecalho(bin, &reg_cab);
     
     free(atualizacoes);
+}
+
+void ler_registro_entrada(dados *reg_dados) {
+    char strCodEstacao[50];
+    char strCodLinha[50];
+    char strCodProxEstacao[50];
+    char strDistProxEstacao[50];
+    char strCodLinhaIntegra[50];
+    char strCodEstIntegra[50];
+
+    *reg_dados = cria_dados();
+
+    scanf("%s", strCodEstacao);
+    ScanQuoteString(reg_dados->nomeEstacao);
+    scanf("%s", strCodLinha);
+    ScanQuoteString(reg_dados->nomeLinha);
+    scanf("%s", strCodProxEstacao);
+    scanf("%s", strDistProxEstacao);
+    scanf("%s", strCodLinhaIntegra);
+    scanf("%s", strCodEstIntegra);
+
+    reg_dados->codEstacao =
+        (strcasecmp(strCodEstacao, "NULO") == 0) ? -1 : atoi(strCodEstacao);
+
+    reg_dados->codLinha =
+        (strcasecmp(strCodLinha, "NULO") == 0) ? -1 : atoi(strCodLinha);
+
+    reg_dados->codProxEstacao =
+        (strcasecmp(strCodProxEstacao, "NULO") == 0) ? -1 : atoi(strCodProxEstacao);
+
+    reg_dados->distProxEstacao =
+        (strcasecmp(strDistProxEstacao, "NULO") == 0) ? -1 : atoi(strDistProxEstacao);
+
+    reg_dados->codLinhaIntegra =
+        (strcasecmp(strCodLinhaIntegra, "NULO") == 0) ? -1 : atoi(strCodLinhaIntegra);
+
+    reg_dados->codEstIntegra =
+        (strcasecmp(strCodEstIntegra, "NULO") == 0) ? -1 : atoi(strCodEstIntegra);
+
+    reg_dados->tamNomeEstacao = strlen(reg_dados->nomeEstacao);
+    reg_dados->tamNomeLinha = strlen(reg_dados->nomeLinha);
+
+    reg_dados->removido = '0';
+    reg_dados->proximo = -1;
+}
+
+long inserir_registro_dinamico(
+    FILE *bin,
+    NoHash *tabela[],
+    cabecalho *cab,
+    dados *reg_dados
+) {
+    long offset_insercao;
+    int rrn_insercao;
+    int self_loop_topo = 0;
+
+    if (bin == NULL) {
+        printf("Falha no processamento do arquivo.\n");
+        return -1;
+    }
+
+    if (cab->topo != -1) {
+        rrn_insercao = cab->topo;
+        offset_insercao = calculo_byteoffset_dados(rrn_insercao);
+
+        fseek(bin, offset_insercao + 1, SEEK_SET);
+
+        int proximo_rrn_topo;
+        fread(&proximo_rrn_topo, sizeof(int), 1, bin);
+
+        if (proximo_rrn_topo == rrn_insercao) {
+            self_loop_topo = 1;
+        }
+
+        cab->topo = proximo_rrn_topo;
+    } else {
+        rrn_insercao = cab->proxRRN;
+        offset_insercao = calculo_byteoffset_dados(rrn_insercao);
+        cab->proxRRN++;
+    }
+    // Existe um caso estranho no run.codes on a pilha aponta pra si mesmo, isso é uma gambiarra pra lidar com esse
+    // caso, e não seria incluída no código final se não houvesse esse caso
+    if (!self_loop_topo) {
+        if (reg_dados->tamNomeEstacao > 0) {
+            NoHash *h = buscar_hash(
+                tabela,
+                reg_dados->nomeEstacao,
+                reg_dados->tamNomeEstacao
+            );
+
+            if (h == NULL) {
+                cab->nroEstacoes++;
+            }
+
+            inserir_hash(
+                tabela,
+                reg_dados->nomeEstacao,
+                reg_dados->tamNomeEstacao
+            );
+        }
+
+        if (reg_dados->codProxEstacao != -1) {
+            cab->nroParesEstacoes++;
+        }
+    }
+
+    fseek(bin, offset_insercao, SEEK_SET);
+    escreve_regdados(bin, reg_dados);
+
+    return offset_insercao;
 }
