@@ -17,7 +17,6 @@ int main() {
     cabecalho cab;
     inicializar_tabela(tabela);
 
-    
     while (scanf("%d", &operacao) != EOF) {
         switch (operacao){
             case 1:
@@ -246,9 +245,6 @@ int main() {
 
 
             case 7:
-            /*CREATE INDEX - cria um arquivo de indice seguindo a logica de arvore B.
-             - cria árvore precisa apenas do arquiv binário de dados e realiza essa função.
-            */
                 //recebe o nome dos arquivos de dados e de index, respectivamente
 
                 scanf("%s %s", nome_bin, nome_index);
@@ -266,10 +262,7 @@ int main() {
                 BinarioNaTela(nome_index);
                 break;
             case 8:
-                /*Busca usando a busca Arvore B.
-                - Mesma lógica do case 3. Lê os campos e valores a serem buscados
-                - Se o campo é chave do indice, o codEstacao, chama a busca de arvb.
-                */
+
                 scanf("%s %s", nome_bin, nome_index);
 
                 bin = ler_binario(nome_bin);
@@ -313,11 +306,7 @@ int main() {
 
                     fseek(index, 0, SEEK_SET);
 
-                    /*Se possui codEstacao - faz busca em arvore.
-                    Como ela retorna o rrn onde a busca terminou - precisa ler 
-                    esse indice, verificar se posição chave != -1, e imprime o registro
-                    Se não, faz a busca do case 3. 
-                    */
+
                     if(possui_cod_estacao){
                         //retorna o rrn da busca em arvoreB
                         int posicao_na_pagina=-1;
@@ -330,13 +319,14 @@ int main() {
                             fseek(index, calculo_byteoffset_indice(rrn_encontrado), SEEK_SET);
                             ler_indice(index, &no_atual);
 
-                            long byte_dados =  NEGATIVO;
+                            long byte_dados = -1;
                             if (posicao_na_pagina == 1) byte_dados = no_atual.Pr1;
                             else if (posicao_na_pagina == 2) byte_dados = no_atual.Pr2;
                             else if (posicao_na_pagina == 3) byte_dados = no_atual.Pr3;
 
-                            if (byte_dados != NEGATIVO) {
-                                dados reg_dados = cria_dados();
+                            if (byte_dados != -1) {
+                                dados reg_dados;
+                                memset(&reg_dados, 0, sizeof(dados));
                                 
                                 fseek(bin, byte_dados, SEEK_SET);
                                 ler_regdados(bin, &reg_dados);
@@ -362,11 +352,206 @@ int main() {
                 fclose(bin);
                 break;
 
-        }
+            case 9:
+                scanf("%s %s", nome_bin, nome_index);
 
+                bin = escrever_binario(nome_bin);
+                FILE* index9 = escrever_binario(nome_index);
+
+                if (bin == NULL || index9 == NULL) {
+                    printf("Falha no processamento do arquivo.\n");
+
+                    if (bin != NULL) fclose(bin);
+                    if (index9 != NULL) fclose(index9);
+
+                    liberar_tabela(tabela);
+                    liberar_lista_arquivos(lista_arquivos);
+                    return 0;
+                }
+
+                if (!arquivo_ja_processado(lista_arquivos, nome_bin)) {
+                    adicionar_arquivo_processado(&lista_arquivos, nome_bin, NULL);
+                    carregar_nomes_no_hash(bin, tabela);
+                }
+
+                scanf("%d", &n);
+
+                cabecalho cab_insercao9;
+                cab_indice cab_index9;
+
+                fseek(bin, 0, SEEK_SET);
+                ler_cabecalho(bin, &cab_insercao9);
+
+                fseek(index9, 0, SEEK_SET);
+                ler_ind_cabecalho(index9, &cab_index9);
+
+                if (cab_insercao9.status == '0' || cab_index9.status == '0') {
+                    printf("Falha no processamento do arquivo.\n");
+                    fclose(bin);
+                    fclose(index9);
+                    break;
+                }
+
+                int houve_insercao9 = 0;
+
+                for (i = 0; i < n; i++) {
+                    dados reg_inserido9;
+
+                    ler_registro_entrada(&reg_inserido9);
+
+                    int pos_chave_no9 = NEGATIVO;
+
+                    if (reg_inserido9.codEstacao != -1) {
+                        busca_arvore(
+                            index9,
+                            cab_index9.noRaiz,
+                            reg_inserido9.codEstacao,
+                            &pos_chave_no9
+                        );
+                    }
+
+                    if (pos_chave_no9 != NEGATIVO) {
+                        continue;
+                    }
+
+                    if (!houve_insercao9) {
+                        cab_insercao9.status = '0';
+                        fseek(bin, 0, SEEK_SET);
+                        escreve_cabecalho(bin, &cab_insercao9);
+
+                        cab_index9.status = '0';
+                        fseek(index9, 0, SEEK_SET);
+                        escreve_ind_cabecalho(index9, &cab_index9);
+
+                        houve_insercao9 = 1;
+                    }
+
+                    long byteoffset9 = inserir_registro_dinamico(
+                        bin,
+                        tabela,
+                        &cab_insercao9,
+                        &reg_inserido9
+                    );
+
+                    if (byteoffset9 != -1 && reg_inserido9.codEstacao != -1) {
+                        insere_recebendo_chave_e_byteoffset(
+                            index9,
+                            &cab_index9,
+                            reg_inserido9.codEstacao,
+                            byteoffset9
+                        );
+                    }
+                }
+
+                if (houve_insercao9) {
+                    cab_insercao9.status = '1';
+                    fseek(bin, 0, SEEK_SET);
+                    escreve_cabecalho(bin, &cab_insercao9);
+
+                    cab_index9.status = '1';
+                    fseek(index9, 0, SEEK_SET);
+                    escreve_ind_cabecalho(index9, &cab_index9);
+                }
+
+                fclose(bin);
+                fclose(index9);
+
+                BinarioNaTela(nome_bin);
+                BinarioNaTela(nome_index);
+
+                break;
+            case 10:
+                scanf("%s %s", nome_bin, nome_index);
+
+                bin = escrever_binario(nome_bin);
+                FILE *index10 = escrever_binario(nome_index);
+
+                if (bin == NULL || index10 == NULL) {
+                    printf("Falha no processamento do arquivo.\n");
+
+                    if (bin != NULL) fclose(bin);
+                    if (index10 != NULL) fclose(index10);
+
+                    liberar_tabela(tabela);
+                    liberar_lista_arquivos(lista_arquivos);
+                    return 0;
+                }
+
+                if (!arquivo_ja_processado(lista_arquivos, nome_bin)) {
+                    adicionar_arquivo_processado(&lista_arquivos, nome_bin, NULL);
+                    carregar_nomes_no_hash(bin, tabela);
+                }
+
+                cabecalho cab_remocao10;
+                cab_indice cab_index10;
+
+                fseek(bin, 0, SEEK_SET);
+                ler_cabecalho(bin, &cab_remocao10);
+
+                fseek(index10, 0, SEEK_SET);
+                ler_ind_cabecalho(index10, &cab_index10);
+
+                if (cab_remocao10.status == '0' || cab_index10.status == '0') {
+                    printf("Falha no processamento do arquivo.\n");
+                    fclose(bin);
+                    fclose(index10);
+                    break;
+                }
+
+                cab_remocao10.status = '0';
+                fseek(bin, 0, SEEK_SET);
+                escreve_cabecalho(bin, &cab_remocao10);
+
+                cab_index10.status = '0';
+                fseek(index10, 0, SEEK_SET);
+                escreve_ind_cabecalho(index10, &cab_index10);
+
+                scanf("%d", &n);
+
+                for (i = 0; i < n; i++) {
+                    char nomesCampos10[8][50];
+                    char valoresCampos10[8][200];
+
+                    scanf("%d", &m);
+
+                    for (j = 0; j < m; j++) {
+                        ler_par_campo_valor(
+                            nomesCampos10[j],
+                            valoresCampos10[j]
+                        );
+                    }
+
+                    remover_registros_dinamico_com_arvore(
+                        bin,
+                        index10,
+                        tabela,
+                        &cab_remocao10,
+                        &cab_index10,
+                        m,
+                        nomesCampos10,
+                        valoresCampos10
+                    );
+                }
+
+                cab_remocao10.status = '1';
+                fseek(bin, 0, SEEK_SET);
+                escreve_cabecalho(bin, &cab_remocao10);
+
+                cab_index10.status = '1';
+                fseek(index10, 0, SEEK_SET);
+                escreve_ind_cabecalho(index10, &cab_index10);
+
+                fclose(bin);
+                fclose(index10);
+
+                BinarioNaTela(nome_bin);
+                BinarioNaTela(nome_index);
+
+                break;
     }
     liberar_tabela(tabela);
     liberar_lista_arquivos(lista_arquivos);
     return 0;
+}
 }
 
