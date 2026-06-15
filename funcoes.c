@@ -5,20 +5,6 @@
 
 
 
-void ler_par_campo_valor(char *campo, char *valor) {
-    if (scanf("%s", campo) == EOF) return;
-
-    if (strcmp(campo, "nomeEstacao") == 0 || strcmp(campo, "nomeLinha") == 0) {
-        ScanQuoteString(valor);
-    } else {
-        scanf("%s", valor);
-
-        if (strcmp(valor, "NULO") == 0 || strcmp(valor, "nulo") == 0) {
-            strcpy(valor, "");
-        }
-    }
-}
-
 /*  
 Verifica se o registro de dados lido atende a todos os critérios 
 de busca informados pelo usuário na main.
