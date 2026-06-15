@@ -3,6 +3,35 @@
 #include <stdlib.h>
 #include "registros.h"
 
+
+/* Construtor do Reg.Cabeçalho de Dados.
+    Retorna a struct cabeçalho com os valores padrão de  NULOS.
+*/
+cabecalho cria_cabecalho(){
+    cabecalho aux;
+    aux.status = 0;
+    aux.topo =NEGATIVO;
+    aux.proxRRN =0;
+    aux.nroEstacoes =0;
+    aux.nroParesEstacoes =0;
+    return aux;
+}
+
+/*  
+    Construtor do Reg.Dados de Dados.
+    Retorna a struct dados com os valores padrão p/Nulo.
+*/
+dados cria_dados(){
+    dados aux;
+    aux.removido = '0';
+    aux.proximo = NEGATIVO;
+    aux.nomeEstacao[0] = '\0';
+    aux.nomeLinha[0] = '\0';
+    aux.tamNomeEstacao =0;
+    aux.tamNomeLinha =0;
+    return aux;
+}
+
 /*
 Retornam o ponteiro de arquivo  fopen!
     Apenas lê ->rb
@@ -58,33 +87,6 @@ FILE* abrir_para_escrita_binário(char *nome_arquivo) {
     return arq;
 }
 
-/* Construtor do Reg.Cabeçalho de Dados.
-    Retorna a struct cabeçalho com os valores padrão de  NULOS.
-*/
-cabecalho cria_cabecalho(){
-    cabecalho aux;
-    aux.status = 0;
-    aux.topo =NEGATIVO;
-    aux.proxRRN =0;
-    aux.nroEstacoes =0;
-    aux.nroParesEstacoes =0;
-    return aux;
-}
-
-/*  
-    Construtor do Reg.Dados de Dados.
-    Retorna a struct dados com os valores padrão p/Nulo.
-*/
-dados cria_dados(){
-    dados aux;
-    aux.removido = '0';
-    aux.proximo = NEGATIVO;
-    aux.nomeEstacao[0] = '\0';
-    aux.nomeLinha[0] = '\0';
-    aux.tamNomeEstacao =0;
-    aux.tamNomeLinha =0;
-    return aux;
-}
 
 /*  
     Função auxiliar p/ modulsrizar o
@@ -196,14 +198,14 @@ void escreve_regdados(FILE* ponteiro_arquivo, dados *reg_dados){
     fwrite(&reg_dados->codLinhaIntegra, sizeof(int), 1, ponteiro_arquivo);
     fwrite(&reg_dados->codEstIntegra, sizeof(int), 1, ponteiro_arquivo);
 
-
-
+    //le o tamanho e escreve a string SEM o \0
     fwrite(&reg_dados->tamNomeEstacao, sizeof(int), 1, ponteiro_arquivo);
     fwrite(reg_dados->nomeEstacao, sizeof(char), reg_dados->tamNomeEstacao, ponteiro_arquivo);
 
     fwrite(&reg_dados->tamNomeLinha, sizeof(int), 1, ponteiro_arquivo);
     fwrite(reg_dados->nomeLinha, sizeof(char), reg_dados->tamNomeLinha, ponteiro_arquivo);
-
+    
+    //soma dos bytes escritos até agr 
     int bytes_escritos = 37 + reg_dados->tamNomeEstacao + reg_dados->tamNomeLinha;
     int lixo_escrever = TAM_REG - bytes_escritos;
 
@@ -218,59 +220,59 @@ void escreve_regdados(FILE* ponteiro_arquivo, dados *reg_dados){
 
 
 
-
+/*Parametros: qtd de campos P, nome dos p campos, valor dos p campos e o ponteiro p/ o registro a ser escrito.
+    Para cada campo em p, verifica qual é o campo a ser reescrito.
+    É certo que não terá erros ou diferença na ortografia dos campos. 
+    Se encontrou o campo, tranforma o char lido em inteiro ou string e preenche a struct dada.
+*/
 
 void atualizar_campos_registro(int p, char nomesAtualiza[][50], char valoresAtualiza[][200], dados *reg_dados) {
     
     for (int i = 0; i < p; i++) {
-        
+        //comparação de campos e valores
+        int lengthValor= strlen(valoresAtualiza[i]);
+
         if (strcmp(nomesAtualiza[i], "codEstacao") == 0) {
-            reg_dados->codEstacao = (strlen(valoresAtualiza[i]) == 0) ? -1 : atoi(valoresAtualiza[i]);
+            reg_dados->codEstacao = (lengthValor == 0) ? -1 : atoi(valoresAtualiza[i]);
         }
         else if (strcmp(nomesAtualiza[i], "codLinha") == 0) {
-            reg_dados->codLinha = (strlen(valoresAtualiza[i]) == 0) ? -1 : atoi(valoresAtualiza[i]);
+            reg_dados->codLinha = (lengthValor == 0) ? -1 : atoi(valoresAtualiza[i]);
         }
         else if (strcmp(nomesAtualiza[i], "codProxEstacao") == 0) {
-            reg_dados->codProxEstacao = (strlen(valoresAtualiza[i]) == 0) ? -1 : atoi(valoresAtualiza[i]);
+            reg_dados->codProxEstacao = (lengthValor == 0) ? -1 : atoi(valoresAtualiza[i]);
         }
         else if (strcmp(nomesAtualiza[i], "distProxEstacao") == 0) {
-            reg_dados->distProxEstacao = (strlen(valoresAtualiza[i]) == 0) ? -1 : atoi(valoresAtualiza[i]);
+            reg_dados->distProxEstacao = (lengthValor == 0) ? -1 : atoi(valoresAtualiza[i]);
         }
         else if (strcmp(nomesAtualiza[i], "codLinhaIntegra") == 0) {
-            reg_dados->codLinhaIntegra = (strlen(valoresAtualiza[i]) == 0) ? -1 : atoi(valoresAtualiza[i]);
+            reg_dados->codLinhaIntegra = (lengthValor == 0) ? -1 : atoi(valoresAtualiza[i]);
         }
         else if (strcmp(nomesAtualiza[i], "codEstIntegra") == 0) {
-            reg_dados->codEstIntegra = (strlen(valoresAtualiza[i]) == 0) ? -1 : atoi(valoresAtualiza[i]);
+            reg_dados->codEstIntegra = (lengthValor== 0) ? -1 : atoi(valoresAtualiza[i]);
         }
         
         else if (strcmp(nomesAtualiza[i], "nomeEstacao") == 0) {
-            if (strlen(valoresAtualiza[i]) == 0) {
+            if (lengthValor == 0) {
                 reg_dados->tamNomeEstacao = 0;
                 reg_dados->nomeEstacao[0] = '\0';
             } else {
-                reg_dados->tamNomeEstacao = strlen(valoresAtualiza[i]);
+                reg_dados->tamNomeEstacao = lengthValor;
                 memcpy(reg_dados->nomeEstacao, valoresAtualiza[i], reg_dados->tamNomeEstacao);
                 reg_dados->nomeEstacao[reg_dados->tamNomeEstacao] = '\0';
             }
         }
         else if (strcmp(nomesAtualiza[i], "nomeLinha") == 0) {
-            if (strlen(valoresAtualiza[i]) == 0) {
+            if (lengthValor == 0) {
                 reg_dados->tamNomeLinha = 0;
                 reg_dados->nomeLinha[0] = '\0';
             } else {
-                reg_dados->tamNomeLinha = strlen(valoresAtualiza[i]);
+                reg_dados->tamNomeLinha = lengthValor;
                 memcpy(reg_dados->nomeLinha, valoresAtualiza[i], reg_dados->tamNomeLinha);
                 reg_dados->nomeLinha[reg_dados->tamNomeLinha] = '\0';
             }
         }
     }
 }
-
-
-
-
-
-
 
 
 
@@ -288,6 +290,9 @@ void imprime_inteiro_ou_nulo(int valor){
     printf(" ");
 }
 
+
+
+
 /*
 -> Imprime os camposde strings NULOs  com a formatação pedida.
 */
@@ -296,6 +301,8 @@ void imprime_texto_ou_nulo(char *texto, int tamanho){
     else printf("%.*s", tamanho, texto);
     printf(" ");
 }
+
+
 
 
 /*Imprimi o Registro de dados com a formatação pedida.

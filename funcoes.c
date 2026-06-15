@@ -380,7 +380,7 @@ void atualizar_registros_dinamico(FILE *bin, NoHash *tabela[],
         
         if (feof(bin)) break;
         if (reg_dados.removido == '1') {
-            memset(&reg_dados, 0, sizeof(dados));
+            reg_dados = cria_dados();
             rrn_atual++;
             continue;
         }

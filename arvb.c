@@ -1018,9 +1018,9 @@ void redistribuir_entre_nos(FILE *index,cab_indice *cab_index,int rrn_esq,int rr
 }
 
 void concatenar_nos(FILE *index,cab_indice *cab_index,int rrn_esq,int rrn_pai,int pos_chave_pai,int rrn_dir) {
-    indice esq;
-    indice dir;
-    indice pai;
+    indice esq = new_indice();
+    indice dir = new_indice();
+    indice pai = new_indice();
 
     int chaves_esq[3], prs_esq[3], filhos_esq[4];
     int chaves_dir[3], prs_dir[3], filhos_dir[4];
@@ -1091,6 +1091,10 @@ void concatenar_nos(FILE *index,cab_indice *cab_index,int rrn_esq,int rrn_pai,in
     // a página destruída é sempre a da direita
     empilhar_no_removido_arvore(index, cab_index, rrn_dir);
 }
+
+
+
+
 
 
 // função para corrigir underflow no nó filho(isto é, quando tem menos chaves que o mínimo), aqui damos um exemplos possíveis
