@@ -18,13 +18,13 @@ Funções que trabalham com o arquivo csv + registro de dados
     /* Parametros: arquivo csv na linha a ser lida, struct para guardar os dados lidos
     Faz o parse manual de uma linha do csv  = 1 registro, e escreve campo a campo, na RAM/struct.*/
 int ler_registro_csv(FILE *csv, dados *reg_dados);
+
     /* Adiciona os dados que estão no arquivo .csv no formato de registro de dados.
          Os ponteiros não devem ser NULL!
         Parametros: arquivo csv, arquivo binário de dados, tabela Hash*/
 void adicionar_csv_no_binario(FILE *arq_csv, FILE *arq_bin, NoHash *tabela[]);
 
 
-void ler_par_campo_valor(char *campo, char *valor);
 
 
 
