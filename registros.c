@@ -34,7 +34,7 @@ dados cria_dados(){
 
 /*
 Retornam o ponteiro de arquivo  fopen!
-    Apenas lê ->rb
+Apenas lê ->rb
 */
 FILE * ler_binario(char *arqbin){
     FILE *file = fopen(arqbin, "rb");
@@ -80,16 +80,12 @@ FILE* abrir_para_escrita_binário(char *nome_arquivo) {
     FILE *arq = escrever_binario(nome_arquivo);
     if (arq == NULL) {
         arq = cria_escreve_binario(nome_arquivo);
-        /* cabecalho cab = cria_cabecalho();
-        escreve_cabecalho(arq,&cab); */
     }
-
     return arq;
 }
 
 
-/*  
-    Função auxiliar p/ modulsrizar o
+/*  Função auxiliar p/ modularizar o
     calculo do byteoffset do registro de dados.
     Retorna o int dele.
 */

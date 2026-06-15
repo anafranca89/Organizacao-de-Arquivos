@@ -1,4 +1,3 @@
-// PONTO_H SIMPLES, CASO QUISER COMENTÁRIOS DO QUE CADA FUNÇÃO FAZ OLHE NO .C
 #ifndef REGISTROS_H
 #define REGISTROS_H
 
@@ -58,16 +57,22 @@ dados cria_dados();
 Funções auxiliares p/ escrita ou leitura do arquivo binário
 ---------------------------------------------------------
 */ 
-
-FILE *ler_binario(char *arqbin);
-FILE * cria_escreve_binario(char *arqbin);
-FILE* escrever_binario(char *arqbin);
-FILE* abrir_para_escrita_binário(char *arq);
+        //retorna o ponteiro no modo rb
+FILE *ler_binario(char *arqbin);  
+        //retorna o ponteiro no modo wb+
+FILE * cria_escreve_binario(char *arqbin); 
+        //retorna o ponteiro no modo rb+
+FILE* escrever_binario(char *arqbin); 
+        //retorna o ponteiro no modo rb ou wb+
+FILE* abrir_para_escrita_binário(char *arq);  
 
 /*---------------------------------
 funções auxiliares que lidam com Registros de dados.
 ------------------------------------------
 */
+    /*Calcula o byteoffset usando o rrn como parametro.*/
+int calculo_byteoffset_dados(int RRN);
+
     /*Ponteiro do fseek no COMEÇO do arquivo!
     Parametros: arquivo  binario, ponteiro p/ -> ler ou inserir o reg.cabeçalho
     Ler - o registro vai ser reescrito pelo valor no arquivo.
@@ -88,8 +93,6 @@ void escreve_regdados(FILE *ponteiro_arquivo, dados* reg_dados);
     */
 void atualizar_campos_registro(int p, char nomesAtualiza[][50], char valoresAtualiza[][200], dados *reg_dados);
 
-    /*Calcula o byteoffset usando o rrn como parametro.*/
-int calculo_byteoffset_dados(int RRN);
 
     /*---------------------------
     Funções q lidam com impressão do campo NULO.
