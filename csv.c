@@ -73,8 +73,7 @@ int ler_registro_csv(FILE *csv, dados *reg_dados) {
     if (fgets(linha, MAX_LINHA_CSV, csv) == NULL) return 0;
 
     //limpa a memoria 
-    memset(reg_dados->nomeEstacao, 0, sizeof(reg_dados->nomeEstacao));
-    memset(reg_dados->nomeLinha, 0, sizeof(reg_dados->nomeLinha));
+    reg_dados=cria_dados();
     p = linha;
 
     reg_dados->codEstacao = ler_inteiro_csv(&p);

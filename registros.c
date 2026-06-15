@@ -216,6 +216,23 @@ void escreve_regdados(FILE* ponteiro_arquivo, dados *reg_dados){
 
 
 
+/*Retorna a string lida usando o SCANQUOTESTRING
+*/
+void ler_par_campo_valor(char *campo, char *valor) {
+    if (scanf("%s", campo) == EOF) return;
+
+    if (strcmp(campo, "nomeEstacao") == 0 || strcmp(campo, "nomeLinha") == 0) {
+        ScanQuoteString(valor);
+    } else {
+        scanf("%s", valor);
+
+        if (strcmp(valor, "NULO") == 0 || strcmp(valor, "nulo") == 0) {
+            strcpy(valor, "");
+        }
+    }
+}
+
+
 /*Parametros: qtd de campos P, nome dos p campos, valor dos p campos e o ponteiro p/ o registro a ser escrito.
     Para cada campo em p, verifica qual é o campo a ser reescrito.
     É certo que não terá erros ou diferença na ortografia dos campos. 

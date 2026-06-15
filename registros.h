@@ -93,6 +93,8 @@ void escreve_regdados(FILE *ponteiro_arquivo, dados* reg_dados);
     */
 void atualizar_campos_registro(int p, char nomesAtualiza[][50], char valoresAtualiza[][200], dados *reg_dados);
 
+    //Retorna a string lida usando o SCANQUOTESTRING
+void ler_par_campo_valor(char *campo, char *valor);
 
     /*---------------------------
     Funções q lidam com impressão do campo NULO.
