@@ -366,7 +366,7 @@ void atualizar_registros_dinamico(FILE *bin, NoHash *tabela[],
         
         if (feof(bin)) break;
         if (reg_dados.removido == '1') {
-            reg_dados = cria_dados();
+            memset(&reg_dados, 0, sizeof(dados));
             rrn_atual++;
             continue;
         }
@@ -502,7 +502,6 @@ long inserir_registro_dinamico(
 ) {
     long offset_insercao;
     int rrn_insercao;
-    int self_loop_topo = 0;
 
     if (bin == NULL) {
         printf("Falha no processamento do arquivo.\n");
@@ -518,44 +517,54 @@ long inserir_registro_dinamico(
         int proximo_rrn_topo;
         fread(&proximo_rrn_topo, sizeof(int), 1, bin);
 
-        if (proximo_rrn_topo == rrn_insercao) {
-            self_loop_topo = 1;
-        }
-
         cab->topo = proximo_rrn_topo;
     } else {
         rrn_insercao = cab->proxRRN;
         offset_insercao = calculo_byteoffset_dados(rrn_insercao);
         cab->proxRRN++;
     }
-    // Existe um caso estranho no run.codes on a pilha aponta pra si mesmo, isso é uma gambiarra pra lidar com esse
-    // caso, e não seria incluída no código final se não houvesse esse caso
-    if (!self_loop_topo) {
-        if (reg_dados->tamNomeEstacao > 0) {
-            NoHash *h = buscar_hash(
-                tabela,
-                reg_dados->nomeEstacao,
-                reg_dados->tamNomeEstacao
-            );
 
-            if (h == NULL) {
-                cab->nroEstacoes++;
-            }
+    if (reg_dados->tamNomeEstacao > 0) {
+        NoHash *h = buscar_hash(
+            tabela,
+            reg_dados->nomeEstacao,
+            reg_dados->tamNomeEstacao
+        );
 
-            inserir_hash(
-                tabela,
-                reg_dados->nomeEstacao,
-                reg_dados->tamNomeEstacao
-            );
+        if (h == NULL) {
+            cab->nroEstacoes++;
         }
 
-        if (reg_dados->codProxEstacao != -1) {
-            cab->nroParesEstacoes++;
-        }
+        inserir_hash(
+            tabela,
+            reg_dados->nomeEstacao,
+            reg_dados->tamNomeEstacao
+        );
+    }
+
+    if (reg_dados->codProxEstacao != -1) {
+        cab->nroParesEstacoes++;
     }
 
     fseek(bin, offset_insercao, SEEK_SET);
     escreve_regdados(bin, reg_dados);
 
     return offset_insercao;
+}
+
+// Função que verifica se arquivo foi realmente aberto, emitindo mensagem de erro e encerrando programa senão
+int verifica_se_foi_aberto(FILE* arq0, FILE* arq1, int tem_dois_arquivos) {
+    
+    // Verifica se o primeiro arquivo não existe ou o segundo não existe e esperamos ter 2 arquivos
+    if (arq0 == NULL || (tem_dois_arquivos && arq1 == NULL)) {
+        
+        printf("Falha no processamento do arquivo.\n");
+        
+        // fecha o que tiver aberto
+        if (arq0 != NULL) fclose(arq0);
+        if (arq1 != NULL) fclose(arq1);
+
+        return 1;
+    }
+    return 0;
 }

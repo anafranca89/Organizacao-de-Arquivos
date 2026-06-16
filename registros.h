@@ -9,7 +9,7 @@
 
 /*------------------------------------
     Definição das structs de Registro do arquivo de dados.
-    ---------------------------------------
+---------------------------------------
 */
 typedef struct reg_cabecalho{
     char status;  // 0 ou 1
@@ -32,9 +32,9 @@ typedef struct reg_dados{
     int tamNomeEstacao; // >=0
     /*espaço de 50 - suficiente para o pior caso, onde apenas uma das strings ocupa os 
     80 - 37 = 43 bytes restantes */
-    char nomeEstacao[200];
+    char nomeEstacao[50];
     int tamNomeLinha;// >=0
-    char nomeLinha[200]; 
+    char nomeLinha[50]; 
 }dados;
 
 
@@ -63,7 +63,7 @@ FILE *ler_binario(char *arqbin);
 FILE * cria_escreve_binario(char *arqbin); 
         //retorna o ponteiro no modo rb+
 FILE* escrever_binario(char *arqbin); 
-        //retorna o ponteiro no modo rb ou wb+
+        //retorna o ponteiro no modo rb+ ou wb+
 FILE* abrir_para_escrita_binário(char *arq);  
 
 /*---------------------------------

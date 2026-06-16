@@ -1,4 +1,6 @@
 #include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
 #include "arvb.h"  
 
 
@@ -1018,9 +1020,9 @@ void redistribuir_entre_nos(FILE *index,cab_indice *cab_index,int rrn_esq,int rr
 }
 
 void concatenar_nos(FILE *index,cab_indice *cab_index,int rrn_esq,int rrn_pai,int pos_chave_pai,int rrn_dir) {
-    indice esq = new_indice();
-    indice dir = new_indice();
-    indice pai = new_indice();
+    indice esq;
+    indice dir;
+    indice pai;
 
     int chaves_esq[3], prs_esq[3], filhos_esq[4];
     int chaves_dir[3], prs_dir[3], filhos_dir[4];
@@ -1091,10 +1093,6 @@ void concatenar_nos(FILE *index,cab_indice *cab_index,int rrn_esq,int rrn_pai,in
     // a página destruída é sempre a da direita
     empilhar_no_removido_arvore(index, cab_index, rrn_dir);
 }
-
-
-
-
 
 
 // função para corrigir underflow no nó filho(isto é, quando tem menos chaves que o mínimo), aqui damos um exemplos possíveis
@@ -1393,7 +1391,10 @@ void remove_chave_arvore(FILE *index,cab_indice *cab_index,int chave) {
 }
 
 // função para remover registros dinãmico usando a árvore
-void remover_registros_dinamico_com_arvore(FILE *bin,FILE *index,NoHash *tabela[],cabecalho *reg_cab,cab_indice *cab_index,int m,char nomesCampos[][50],char valoresCampos[][200]) {
+void remover_registros_dinamico_com_arvore(FILE *bin, FILE *index, NoHash *tabela[],
+                                           cabecalho *reg_cab, cab_indice *cab_index,
+                                           int m, char nomesCampos[][50],
+                                           char valoresCampos[][200]) {
     int rrn_atual;
     dados reg_dados;
 
@@ -1401,6 +1402,100 @@ void remover_registros_dinamico_com_arvore(FILE *bin,FILE *index,NoHash *tabela[
         printf("Falha no processamento do arquivo.\n");
         return;
     }
+
+    // caso rápido: quando tem apenas codEstacao
+    if (m == 1 && strcmp(nomesCampos[0], "codEstacao") == 0) {
+        int chave_buscada;
+        int pos_chave_no = NEGATIVO;
+        int rrn_no_encontrado;
+        long byteoffset_dados = -1;
+        int rrn_dados;
+        indice no_atual;
+
+        if (strlen(valoresCampos[0]) == 0) {
+            return;
+        }
+
+        chave_buscada = atoi(valoresCampos[0]);
+
+        rrn_no_encontrado = busca_arvore(
+            index,
+            cab_index->noRaiz,
+            chave_buscada,
+            &pos_chave_no
+        );
+
+        if (rrn_no_encontrado == NEGATIVO || pos_chave_no == NEGATIVO) {
+            return;
+        }
+
+        fseek(index, calculo_byteoffset_indice(rrn_no_encontrado), SEEK_SET);
+        ler_indice(index, &no_atual);
+
+        if (pos_chave_no == 1) {
+            byteoffset_dados = no_atual.Pr1;
+        } else if (pos_chave_no == 2) {
+            byteoffset_dados = no_atual.Pr2;
+        } else if (pos_chave_no == 3) {
+            byteoffset_dados = no_atual.Pr3;
+        }
+
+        if (byteoffset_dados == -1) {
+            return;
+        }
+
+        fseek(bin, byteoffset_dados, SEEK_SET);
+        reg_dados = cria_dados();
+        ler_regdados(bin, &reg_dados);
+
+        if (reg_dados.removido == '1') {
+            return;
+        }
+
+        rrn_dados = (byteoffset_dados - TAM_CABECALHO) / TAM_REG;
+
+        if (reg_dados.codEstacao != -1) {
+            remove_chave_arvore(
+                index,
+                cab_index,
+                reg_dados.codEstacao
+            );
+        }
+
+        reg_dados.removido = '1';
+        reg_dados.proximo = reg_cab->topo;
+
+        fseek(bin, byteoffset_dados, SEEK_SET);
+        escreve_regdados(bin, &reg_dados);
+
+        reg_cab->topo = rrn_dados;
+
+        if (reg_dados.tamNomeEstacao > 0) {
+            NoHash *h = buscar_hash(
+                tabela,
+                reg_dados.nomeEstacao,
+                reg_dados.tamNomeEstacao
+            );
+
+            if (h != NULL && h->repeticoes == 1) {
+                reg_cab->nroEstacoes--;
+            }
+
+            decrementar_hash(
+                tabela,
+                reg_dados.nomeEstacao,
+                reg_dados.tamNomeEstacao
+            );
+        }
+
+        if (reg_dados.codProxEstacao != -1) {
+            reg_cab->nroParesEstacoes--;
+        }
+
+        return;
+    }
+
+    // Caso geral: quando tem Codestacao e outros
     for (rrn_atual = 0; rrn_atual < reg_cab->proxRRN; rrn_atual++) {
         int ok;
 
@@ -1423,7 +1518,6 @@ void remover_registros_dinamico_com_arvore(FILE *bin,FILE *index,NoHash *tabela[
         if (ok) {
             int topo_antigo = reg_cab->topo;
 
-            // primeiro remove da árvore
             if (reg_dados.codEstacao != -1) {
                 remove_chave_arvore(
                     index,
@@ -1439,7 +1533,7 @@ void remover_registros_dinamico_com_arvore(FILE *bin,FILE *index,NoHash *tabela[
             escreve_regdados(bin, &reg_dados);
 
             reg_cab->topo = rrn_atual;
-            // trata o hashing
+
             if (reg_dados.tamNomeEstacao > 0) {
                 NoHash *h = buscar_hash(
                     tabela,

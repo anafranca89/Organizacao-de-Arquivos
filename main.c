@@ -6,7 +6,6 @@
 
 int main() {
     NoHash *tabela[TAM_TABELA];
-    ArquivoAberto *lista_arquivos = NULL;
 
     int operacao;
     char nome_csv[100];
@@ -24,21 +23,13 @@ int main() {
                 //mesmo que o arquivo já exista - reescreve
                 FILE *bin = cria_escreve_binario(nome_bin);
                 FILE *csv = fopen(nome_csv, "r");
-                if (csv == NULL || bin == NULL) {
-                    printf("Falha no processamento do arquivo.\n");
-                        
-                    if (csv != NULL) fclose(csv);
-                    if (bin != NULL) fclose(bin);
-                    liberar_tabela(tabela);
-                    liberar_lista_arquivos(lista_arquivos);
-                    return 0;
+                if (verifica_se_foi_aberto(csv, bin, 1)){
+                    break;
                 }
+                liberar_tabela(tabela);
+                
                 //abre o csv dentro da função
                 adicionar_csv_no_binario(csv, bin, tabela);
-
-                if (!arquivo_ja_processado(lista_arquivos, nome_bin)) {
-                    adicionar_arquivo_processado(&lista_arquivos, nome_bin, NULL);
-                }
                 fclose(bin);
                 fclose(csv);
                 BinarioNaTela(nome_bin);
@@ -48,16 +39,12 @@ int main() {
                 scanf("%s", nome_bin);
                 
                bin = ler_binario(nome_bin);
-                if (bin == NULL) {
-                    printf("Falha no processamento do arquivo.\n");
-                    liberar_tabela(tabela);
-                    liberar_lista_arquivos(lista_arquivos);
-                    return 0;
+                if(verifica_se_foi_aberto(bin, NULL, 0)){
+                    break;
                 }
-                if (!arquivo_ja_processado(lista_arquivos, nome_bin)) {
-                    adicionar_arquivo_processado(&lista_arquivos, nome_bin, NULL);
-                    carregar_nomes_no_hash(bin, tabela);
-                }
+                liberar_tabela(tabela);
+                carregar_nomes_no_hash(bin, tabela);
+
                 mostrar_binario_sequencial(bin);
                 fclose(bin);
                 break;
@@ -68,12 +55,11 @@ int main() {
 
                 bin = ler_binario(nome_bin);
 
-                if (bin == NULL) {
-                    printf("Falha no processamento do arquivo.\n");
-                    liberar_tabela(tabela);
-                    liberar_lista_arquivos(lista_arquivos);
-                    return 0;
+                if(verifica_se_foi_aberto(bin, NULL, 0)){
+                    break;
                 }
+                liberar_tabela(tabela);
+                carregar_nomes_no_hash(bin, tabela);
 
                 scanf("%d", &n);
 
@@ -97,20 +83,14 @@ int main() {
                 // caso o arquivo for inexistente, mostra a saída pedida e limpa as estruturas
                 bin = abrir_para_escrita_binário(nome_bin);
 
-                if (!arquivo_ja_processado(lista_arquivos, nome_bin)) {
-                    adicionar_arquivo_processado(&lista_arquivos, nome_bin, NULL);
-                    carregar_nomes_no_hash(bin, tabela);
+                if(verifica_se_foi_aberto(bin, NULL, 0)){
+                    break;
                 }
-                if (bin == NULL) {
-                    printf("Falha no processamento do arquivo.\n");
-                    liberar_tabela(tabela);
-                    liberar_lista_arquivos(lista_arquivos);
-                    return 0;
-                }
+                liberar_tabela(tabela);
+                carregar_nomes_no_hash(bin, tabela);
 
                 ler_cabecalho(bin, &cab);
                 // começa o arquivo com inconsistente - inicia a escrita
-                
                 cab.status = '0';
                 fseek(bin, 0, SEEK_SET);
                 escreve_cabecalho(bin, &cab);
@@ -147,19 +127,13 @@ int main() {
                 // obtém um ponteiro para o arquivo, abrindo um novo se necessário
                 bin = abrir_para_escrita_binário(nome_bin);
                 // caso o arquivo for inexistente, mostra a saída pedida e limpa as estruturas
-                if (bin == NULL) {
-                    printf("Falha no processamento do arquivo.\n");
-                    liberar_tabela(tabela);
-                    liberar_lista_arquivos(lista_arquivos);
-                    return 0;
+                if(verifica_se_foi_aberto(bin, NULL, 0)){
+                    break;
                 }
-                 if (!arquivo_ja_processado(lista_arquivos, nome_bin)) {
-                    adicionar_arquivo_processado(&lista_arquivos, nome_bin, NULL);
-                    carregar_nomes_no_hash(bin, tabela);
-                }
-
+                liberar_tabela(tabela);
+                carregar_nomes_no_hash(bin, tabela);
                 
-                cabecalho cab_insercao;
+                cabecalho cab_insercao = cria_cabecalho();
                 
                 fseek(bin, 0, SEEK_SET);
                 ler_cabecalho(bin, &cab_insercao);
@@ -193,16 +167,11 @@ int main() {
                 scanf("%s", nome_bin);
                 bin = abrir_para_escrita_binário(nome_bin);
                 // caso o arquivo for inexistente, mostra a saída pedida e limpa as estruturas
-                if (bin == NULL) {
-                    printf("Falha no processamento do arquivo.\n");
-                    liberar_tabela(tabela);
-                    liberar_lista_arquivos(lista_arquivos);
-                    return 0;
+                if(verifica_se_foi_aberto(bin, NULL, 0)){
+                    break;
                 }
-                 if (!arquivo_ja_processado(lista_arquivos, nome_bin)) {
-                    adicionar_arquivo_processado(&lista_arquivos, nome_bin, NULL);
-                    carregar_nomes_no_hash(bin, tabela);
-                }
+                liberar_tabela(tabela);
+                carregar_nomes_no_hash(bin, tabela);
 
                 ler_cabecalho(bin, &cab);
                 // marca o arquivo como inconsistente
@@ -249,10 +218,11 @@ int main() {
 
                 scanf("%s %s", nome_bin, nome_index);
                 bin = ler_binario(nome_bin);
-                if (bin == NULL) {
-                    printf("Falha no processamento do arquivo.\n");
+                if(verifica_se_foi_aberto(bin, NULL, 0)){
                     break;
                 }
+                liberar_tabela(tabela);
+                carregar_nomes_no_hash(bin, tabela);
 
                 liberar_tabela(tabela);
                 inicializar_tabela(tabela);
@@ -267,17 +237,11 @@ int main() {
 
                 bin = ler_binario(nome_bin);
                 FILE* index = ler_binario(nome_index);
-                if (bin == NULL || index== NULL) {
-                    printf("Falha no processamento do arquivo.\n");
-                    liberar_tabela(tabela);
-                    liberar_lista_arquivos(lista_arquivos);
-                    return 0;
+                if(verifica_se_foi_aberto(index, bin, 1)){
+                    break;
                 }
-
-                if (!arquivo_ja_processado(lista_arquivos, nome_bin)) {
-                    adicionar_arquivo_processado(&lista_arquivos, nome_bin, NULL);
-                    carregar_nomes_no_hash(bin, tabela);
-                }
+                liberar_tabela(tabela);
+                carregar_nomes_no_hash(bin, tabela);
 
                 cab_indice ci;
                 ler_ind_cabecalho(index, &ci);
@@ -356,39 +320,29 @@ int main() {
                 scanf("%s %s", nome_bin, nome_index);
 
                 bin = escrever_binario(nome_bin);
-                FILE* index9 = escrever_binario(nome_index);
-
-                if (bin == NULL || index9 == NULL) {
-                    printf("Falha no processamento do arquivo.\n");
-
-                    if (bin != NULL) fclose(bin);
-                    if (index9 != NULL) fclose(index9);
-
-                    liberar_tabela(tabela);
-                    liberar_lista_arquivos(lista_arquivos);
-                    return 0;
+                index = escrever_binario(nome_index);
+                if(verifica_se_foi_aberto(bin, index, 1)){
+                    break;
                 }
-
-                if (!arquivo_ja_processado(lista_arquivos, nome_bin)) {
-                    adicionar_arquivo_processado(&lista_arquivos, nome_bin, NULL);
-                    carregar_nomes_no_hash(bin, tabela);
-                }
+                liberar_tabela(tabela);
+                carregar_nomes_no_hash(bin, tabela);
+                
 
                 scanf("%d", &n);
 
                 cabecalho cab_insercao9;
-                cab_indice cab_index9;
+                cab_indice cab_index;
 
                 fseek(bin, 0, SEEK_SET);
                 ler_cabecalho(bin, &cab_insercao9);
 
-                fseek(index9, 0, SEEK_SET);
-                ler_ind_cabecalho(index9, &cab_index9);
+                fseek(index, 0, SEEK_SET);
+                ler_ind_cabecalho(index, &cab_index);
 
-                if (cab_insercao9.status == '0' || cab_index9.status == '0') {
+                if (cab_insercao9.status == '0' || cab_index.status == '0') {
                     printf("Falha no processamento do arquivo.\n");
                     fclose(bin);
-                    fclose(index9);
+                    fclose(index);
                     break;
                 }
 
@@ -403,8 +357,8 @@ int main() {
 
                     if (reg_inserido9.codEstacao != -1) {
                         busca_arvore(
-                            index9,
-                            cab_index9.noRaiz,
+                            index,
+                            cab_index.noRaiz,
                             reg_inserido9.codEstacao,
                             &pos_chave_no9
                         );
@@ -419,9 +373,9 @@ int main() {
                         fseek(bin, 0, SEEK_SET);
                         escreve_cabecalho(bin, &cab_insercao9);
 
-                        cab_index9.status = '0';
-                        fseek(index9, 0, SEEK_SET);
-                        escreve_ind_cabecalho(index9, &cab_index9);
+                        cab_index.status = '0';
+                        fseek(index, 0, SEEK_SET);
+                        escreve_ind_cabecalho(index, &cab_index);
 
                         houve_insercao9 = 1;
                     }
@@ -433,10 +387,10 @@ int main() {
                         &reg_inserido9
                     );
 
-                    if (byteoffset9 != -1 && reg_inserido9.codEstacao != -1) {
+                    if (byteoffset9 != NEGATIVO && reg_inserido9.codEstacao != NEGATIVO) {
                         insere_recebendo_chave_e_byteoffset(
-                            index9,
-                            &cab_index9,
+                            index,
+                            &cab_index,
                             reg_inserido9.codEstacao,
                             byteoffset9
                         );
@@ -448,13 +402,13 @@ int main() {
                     fseek(bin, 0, SEEK_SET);
                     escreve_cabecalho(bin, &cab_insercao9);
 
-                    cab_index9.status = '1';
-                    fseek(index9, 0, SEEK_SET);
-                    escreve_ind_cabecalho(index9, &cab_index9);
+                    cab_index.status = '1';
+                    fseek(index, 0, SEEK_SET);
+                    escreve_ind_cabecalho(index, &cab_index);
                 }
 
                 fclose(bin);
-                fclose(index9);
+                fclose(index);
 
                 BinarioNaTela(nome_bin);
                 BinarioNaTela(nome_index);
@@ -465,23 +419,12 @@ int main() {
 
                 bin = escrever_binario(nome_bin);
                 FILE *index10 = escrever_binario(nome_index);
-
-                if (bin == NULL || index10 == NULL) {
-                    printf("Falha no processamento do arquivo.\n");
-
-                    if (bin != NULL) fclose(bin);
-                    if (index10 != NULL) fclose(index10);
-
-                    liberar_tabela(tabela);
-                    liberar_lista_arquivos(lista_arquivos);
-                    return 0;
+                if(verifica_se_foi_aberto(bin, index, 1)){
+                    break;
                 }
-
-                if (!arquivo_ja_processado(lista_arquivos, nome_bin)) {
-                    adicionar_arquivo_processado(&lista_arquivos, nome_bin, NULL);
-                    carregar_nomes_no_hash(bin, tabela);
-                }
-
+                liberar_tabela(tabela);
+                carregar_nomes_no_hash(bin, tabela);
+                
                 cabecalho cab_remocao10;
                 cab_indice cab_index10;
 
@@ -550,7 +493,6 @@ int main() {
                 break;
     }
     liberar_tabela(tabela);
-    liberar_lista_arquivos(lista_arquivos);
     return 0;
 }
 }

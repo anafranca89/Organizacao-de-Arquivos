@@ -32,7 +32,6 @@ void atualizar_registros_dinamico(FILE *bin, NoHash *tabela[], int m, char nomes
 
 
 long ler_e_inserir_registro(FILE *bin, NoHash *tabela[], cabecalho *reg_cabecalho);
-
-
+int verifica_se_foi_aberto(FILE *ARQ1, FILE *ARQ2, int tem2arquivos);
 #endif
 

@@ -3,55 +3,8 @@
 #include <string.h>
 #include "hash.h"
 
-ArquivoAberto* buscar_arquivo(ArquivoAberto *lista, char *nome_bin) {
-    ArquivoAberto *atual = lista;
-
-    while (atual != NULL) {
-        if (strcmp(atual->nome, nome_bin) == 0) {
-            return atual;
-        }
-        atual = atual->prox;
-    }
-
-    return NULL;
-}
 
 
-int arquivo_ja_processado(ArquivoAberto *lista, char *nome_bin) {
-    ArquivoAberto *atual = lista;
-
-    while (atual != NULL) {
-        if (strcmp(atual->nome, nome_bin) == 0) {
-            return 1;
-        }
-        atual = atual->prox;
-    }
-
-    return 0;
-}
-
-void adicionar_arquivo_processado(ArquivoAberto **lista, char *nome_bin, FILE *arquivo) {
-    ArquivoAberto *novo = (ArquivoAberto *) malloc(sizeof(ArquivoAberto));
-    strcpy(novo->nome, nome_bin);
-    novo->arquivo = arquivo;
-    novo->prox = *lista;
-    *lista = novo;
-}
-
-void liberar_lista_arquivos(ArquivoAberto *lista) {
-    ArquivoAberto *atual = lista;
-
-    while (atual != NULL) {
-        ArquivoAberto *temp = atual;
-        atual = atual->prox;
-
-        if (temp->arquivo != NULL) {
-            fclose(temp->arquivo);
-        }
-
-        free(temp);
-    }
-}
 
 
 
@@ -178,47 +131,6 @@ NoHash* buscar_hash(NoHash *tabela[], char *nomeEstacao, int tamnomeEstacao) {
     }
 
     return NULL;
-}
-
-
-
-
-
-/* função que integra todas as outras para obter o ponteiro de um arquivo binário
-Parametros: ponteira p/lista de arquivos abertos, nome do arquivo, flag p/abrir arquivo como leitura ou como escrita
-    ponteiro p/tabela Hash.
-Retorna: O ponteiro d arquivo aberto no modo na flag de escrita.
-*/
-FILE *obter_arquivo_binario(ArquivoAberto **lista_arquivos,
-                            char *nome_bin, int escrita, 
-                            NoHash *tabela[]) {
-    ArquivoAberto *atual;
-    FILE *bin;
-
-    atual = buscar_arquivo(*lista_arquivos, nome_bin);
-
-
-    if (atual != NULL) {
-        fseek(atual->arquivo, 0, SEEK_SET);
-        return atual->arquivo;
-    } 
-    
-    if(escrita){
-        bin = abrir_para_escrita_binário(nome_bin);
-    }else{
-        bin = ler_binario(nome_bin);
-    }
-
-    if (bin == NULL) {
-        return NULL;
-    }
-
-    if (!arquivo_ja_processado(*lista_arquivos, nome_bin)) {
-        adicionar_arquivo_processado(lista_arquivos, nome_bin, bin);
-        liberar_tabela(tabela);
-        carregar_nomes_no_hash(bin, tabela);
-    }
-    return bin;
 }
 
 
