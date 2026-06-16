@@ -248,6 +248,8 @@ void create_index(NoHash *tabela[], char* nome_bin, char*nome_index){
 
 
 
+
+
 void select_from_where_index(NoHash *tabela[], char* nome_bin, char*nome_index){
 
     FILE *bin = ler_binario(nome_bin);
@@ -332,6 +334,11 @@ void select_from_where_index(NoHash *tabela[], char* nome_bin, char*nome_index){
     fclose(bin);
 }
  
+
+
+
+
+
 
 
 void insert_into_index(NoHash *tabela[], char* nome_bin,char*nome_index, int n){
@@ -432,8 +439,6 @@ void insert_into_index(NoHash *tabela[], char* nome_bin,char*nome_index, int n){
             cab_index.nroNos++;
         }
     }
-
-
     
     cab_insercao.status = '1';
     fseek(bin, 0, SEEK_SET);
@@ -450,6 +455,7 @@ void insert_into_index(NoHash *tabela[], char* nome_bin,char*nome_index, int n){
     BinarioNaTela(nome_bin);
     BinarioNaTela(nome_index);
 }
+
 
 
 

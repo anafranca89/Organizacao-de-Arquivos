@@ -48,18 +48,26 @@ void delete_from_where(NoHash *tabela[], char* nome_bin);
 
 
     /*Parametros - arquivo binario de dados, tabela INICIALIZADA hash, N quantos registro a inserir
-    
+    Insere no arquivo de dados os n registros, usando a pilha de logicamente removidos.
     */ 
-
 void insert_into(NoHash *tabela[], char* nome_bin, int n);
 
-
+    /*Dados os arquivos de dados e A tabela hash deve estar INICIALIZADA!.
+    Similar a busca, lê n registros para atualizar m campos com m valores.
+    */
 void update_table(NoHash *tabela[], char* nome_bin);
 
 
+    /*Dados os arquivos de dados e arquivos de indece.
+    A tabela hash deve estar INICIALIZADA!.
+    Cria o registro de ARVB no arquivo de indeces.
+    */
 void create_index(NoHash *tabela[], char* nome_bin, char* nome_index);
 
 
+    /*Dados os arquivos de dados e arquivos de indece.
+    Usa a busca por registros de dados, ou busca na arvb um dos campos for a chave indexada.
+    */
 void select_from_where_index(NoHash *tabela[], char* nome_bin,char*nome_index);
 
 
