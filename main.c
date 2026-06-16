@@ -412,8 +412,9 @@ int main() {
 
                 BinarioNaTela(nome_bin);
                 BinarioNaTela(nome_index);
-
                 break;
+
+                
             case 10:
                 scanf("%s %s", nome_bin, nome_index);
 
