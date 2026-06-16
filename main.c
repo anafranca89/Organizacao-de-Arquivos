@@ -20,7 +20,6 @@ int main() {
         switch (operacao){
             case 1:
                 scanf("%s %s", nome_csv, nome_bin);
-                //mesmo que o arquivo já exista - reescreve
                 FILE *bin = cria_escreve_binario(nome_bin);
                 FILE *csv = fopen(nome_csv, "r");
                 if (verifica_se_foi_aberto(csv, bin, 1)){
@@ -414,13 +413,13 @@ int main() {
                 BinarioNaTela(nome_index);
                 break;
 
-                
+
             case 10:
                 scanf("%s %s", nome_bin, nome_index);
 
                 bin = escrever_binario(nome_bin);
                 FILE *index10 = escrever_binario(nome_index);
-                if(verifica_se_foi_aberto(bin, index, 1)){
+                if(verifica_se_foi_aberto(bin, index10, 1)){
                     break;
                 }
                 liberar_tabela(tabela);
