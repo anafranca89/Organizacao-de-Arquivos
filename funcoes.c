@@ -218,25 +218,6 @@ void mostrar_binario_sequencial(FILE *bin){
 
 
 
- /* 
-    insere um registro usando o conceito de pilha de rns dos removidos ensinado em aula,
-    isto é, apenas marca como logicamente removido.
-    Parâmetros:  arquivo de dados, Tabela Hash, 
-
-*/
-
-long ler_e_inserir_registro(FILE *bin, NoHash *tabela[], cabecalho *reg_cabecalho) {
-    dados reg_dados;
-
-    ler_registro_entrada(&reg_dados);
-
-    return inserir_registro_dinamico(
-        bin,
-        tabela,
-        reg_cabecalho,
-        &reg_dados
-    );
-}
 
 
 
@@ -458,8 +439,6 @@ void ler_registro_entrada(dados *reg_dados) {
     char strCodLinhaIntegra[50];
     char strCodEstIntegra[50];
 
-    *reg_dados = cria_dados();
-
     scanf("%s", strCodEstacao);
     ScanQuoteString(reg_dados->nomeEstacao);
     scanf("%s", strCodLinha);
@@ -494,25 +473,26 @@ void ler_registro_entrada(dados *reg_dados) {
     reg_dados->proximo = -1;
 }
 
-long inserir_registro_dinamico(
+void inserir_registro_dinamico(
     FILE *bin,
     NoHash *tabela[],
     cabecalho *cab,
-    dados *reg_dados
+    dados *reg_dados,
+    long int *offset_insercao
 ) {
-    long offset_insercao;
+    
     int rrn_insercao;
 
-    if (bin == NULL) {
+    /* if (bin == NULL) {
         printf("Falha no processamento do arquivo.\n");
         return -1;
-    }
+    } */
 
     if (cab->topo != -1) {
         rrn_insercao = cab->topo;
-        offset_insercao = calculo_byteoffset_dados(rrn_insercao);
+        *offset_insercao = calculo_byteoffset_dados(rrn_insercao);
 
-        fseek(bin, offset_insercao + 1, SEEK_SET);
+        fseek(bin, *offset_insercao + 1, SEEK_SET);
 
         int proximo_rrn_topo;
         fread(&proximo_rrn_topo, sizeof(int), 1, bin);
@@ -520,25 +500,18 @@ long inserir_registro_dinamico(
         cab->topo = proximo_rrn_topo;
     } else {
         rrn_insercao = cab->proxRRN;
-        offset_insercao = calculo_byteoffset_dados(rrn_insercao);
+        *offset_insercao = calculo_byteoffset_dados(rrn_insercao);
         cab->proxRRN++;
     }
 
     if (reg_dados->tamNomeEstacao > 0) {
-        NoHash *h = buscar_hash(
-            tabela,
-            reg_dados->nomeEstacao,
-            reg_dados->tamNomeEstacao
-        );
+        NoHash *h = buscar_hash(tabela,reg_dados->nomeEstacao,reg_dados->tamNomeEstacao);
 
         if (h == NULL) {
             cab->nroEstacoes++;
         }
 
-        inserir_hash(
-            tabela,
-            reg_dados->nomeEstacao,
-            reg_dados->tamNomeEstacao
+        inserir_hash(tabela,reg_dados->nomeEstacao,reg_dados->tamNomeEstacao
         );
     }
 
@@ -546,10 +519,9 @@ long inserir_registro_dinamico(
         cab->nroParesEstacoes++;
     }
 
-    fseek(bin, offset_insercao, SEEK_SET);
+    fseek(bin, *offset_insercao, SEEK_SET);
     escreve_regdados(bin, reg_dados);
-
-    return offset_insercao;
+    
 }
 
 // Função que verifica se arquivo foi realmente aberto, emitindo mensagem de erro e encerrando programa senão

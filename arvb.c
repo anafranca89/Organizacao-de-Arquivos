@@ -5,6 +5,35 @@
 
 
 
+/* Leitura da Pilha de Nós REMOVIDOS. Retorna o RRN do próximo nó válido p/inserção, 
+seja ele um nó logicamente removido, ou apenas o proximo rrn a ser criado.
+*/
+int alocar_rrn_no_arvore(FILE *arq_index, cab_indice *cab_ind) {
+    int proximo_rrn_valido;
+
+    if (cab_ind->topo != NEGATIVO) {
+        indice prox_removido;
+
+        proximo_rrn_valido = cab_ind->topo;
+
+        fseek(arq_index, calculo_byteoffset_indice(proximo_rrn_valido), SEEK_SET);
+        ler_indice(arq_index, &prox_removido);
+        cab_ind->topo = prox_removido.proximo;
+    } else {
+        proximo_rrn_valido= cab_ind->proxRRN;
+        cab_ind->proxRRN++;
+    }
+
+    cab_ind->nroNos++;
+
+    return proximo_rrn_valido;
+}
+
+
+
+
+
+
 /*Algoritmo Driver: Cria a lista de nós da árvore.
 Caso1: Arquivo/arvore n existe--> cria um arquivo p/leitura e escrita
 Caso2: Arquivo existe --> apenas abre arquivo p/escrita 
@@ -17,19 +46,14 @@ Caso2: Arquivo existe --> apenas abre arquivo p/escrita
         - Atualiza cabeçalho da arvore
         - fecha arquivo
 */
-void cria_arvore(FILE* arq_dados, char* arq_index) {
+void cria_arvore(FILE* arq_dados, FILE* index) {
 
-    FILE* indexes = cria_escreve_binario(arq_index);
-    if (indexes == NULL) {
-        printf("Falha no processamento do arquivo.\n");
-        return;
-    }
 
     cab_indice index_cab = new_cab_indice();
 
     index_cab.status = '0';
-    fseek(indexes, 0, SEEK_SET);
-    escreve_ind_cabecalho(indexes, &index_cab);
+    fseek(index, 0, SEEK_SET);
+    escreve_ind_cabecalho(index, &index_cab);
 
     cabecalho reg_cab_dados = cria_cabecalho();
 
@@ -38,7 +62,7 @@ void cria_arvore(FILE* arq_dados, char* arq_index) {
 
     if (reg_cab_dados.status == '0') {
         printf("Falha no processamento do arquivo.\n");
-        fclose(indexes);
+       
         return;
     }
 
@@ -56,7 +80,7 @@ void cria_arvore(FILE* arq_dados, char* arq_index) {
         }
 
         insere_recebendo_chave_e_byteoffset(
-            indexes,
+            index,
             &index_cab,
             reg_dados.codEstacao,
             byteoffset_dados
@@ -64,10 +88,9 @@ void cria_arvore(FILE* arq_dados, char* arq_index) {
     }
 
     index_cab.status = '1';
-    fseek(indexes, 0, SEEK_SET);
-    escreve_ind_cabecalho(indexes, &index_cab);
+    fseek(index, 0, SEEK_SET);
+    escreve_ind_cabecalho(index, &index_cab);
 
-    fclose(indexes);
 }
 
 void insere_recebendo_chave_e_byteoffset(FILE *indexes, cab_indice *index_cab, int chave, int byteoffset_dados) {
@@ -417,29 +440,6 @@ Parametros: arquivo de indezx, cabeçalho do index, rrn do no, o proprio no,
     - atualiza a chave a ser promovida e o filho a ser promovido 
     - organiza as chaves nos 2 nós e retorna a novapagina.
 */
-
-int alocar_rrn_no_arvore(FILE *arq_index, cab_indice *cab_ind) {
-    int rrn_alocado;
-
-    if (cab_ind->topo != NEGATIVO) {
-        indice no_removido;
-
-        rrn_alocado = cab_ind->topo;
-
-        fseek(arq_index, calculo_byteoffset_indice(rrn_alocado), SEEK_SET);
-        ler_indice(arq_index, &no_removido);
-
-        cab_ind->topo = no_removido.proximo;
-    } else {
-        rrn_alocado = cab_ind->proxRRN;
-        cab_ind->proxRRN++;
-    }
-
-    cab_ind->nroNos++;
-
-    return rrn_alocado;
-}
-
 void split(
     FILE *arq_index,
     cab_indice *cab_ind,

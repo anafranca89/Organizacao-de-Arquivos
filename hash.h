@@ -39,6 +39,7 @@ Funções Base Hash:
     -> carregar_nomes: dado um arquivo binário de registro de dados, usa insere p/ armazenar as Estações únicas.
 */
         /*  Ponteiro do fseek no COMEÇO do arquivo antes de chamar a função!
+        Ao final o PONTEIRO JÁ ESTÁ no começo do arquivo.
         precisa dos ponteiros arqivo binario de dados ABERTO em leitura e tabela HASH inicializada*/
 void carregar_nomes_no_hash(FILE *bin, NoHash *tabela[]);
     //precisa da tabela HASH inicializada, e o tamanho da string e a propra string a inserir
