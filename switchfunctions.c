@@ -175,7 +175,6 @@ void insert_into(NoHash *tabela[], char* nome_bin , int n){
 
 
 void update_table(NoHash *tabela[], char* nome_bin){
-    scanf("%s", nome_bin);
     FILE *bin = abrir_para_escrita_binário(nome_bin);
     // caso o arquivo for inexistente, mostra a saída pedida e limpa as estruturas
     if (bin == NULL){

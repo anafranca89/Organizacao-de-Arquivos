@@ -246,12 +246,10 @@ void remover_registros_dinamico(FILE *bin, NoHash *tabela[],cabecalho *reg_cab, 
     }
 
 
-	
-
   	for (rrn_atual = 0; rrn_atual < reg_cab->proxRRN; rrn_atual++) {
         int ok =1;
         reg_dados = cria_dados();
-        //fseek(bin, calculo_byteoffset_dados(rrn_atual), SEEK_SET);
+        fseek(bin, calculo_byteoffset_dados(rrn_atual), SEEK_SET);
         ler_regdados(bin, &reg_dados);
         
         if (reg_dados.removido == '1') continue;
@@ -293,6 +291,10 @@ void remover_registros_dinamico(FILE *bin, NoHash *tabela[],cabecalho *reg_cab, 
     escreve_cabecalho(bin, reg_cab);
     
 }
+
+
+
+
 
 
 void atualizar_registros_dinamico(FILE *bin, NoHash *tabela[],
@@ -341,13 +343,13 @@ void atualizar_registros_dinamico(FILE *bin, NoHash *tabela[],
         return;
     }
 
-	while (rrn_atual <reg_cab.proxRRN && !feof(bin)) {
+	while (rrn_atual <reg_cab.proxRRN) {
 
         ler_regdados(bin, &reg_dados);
         
         if (feof(bin)) break;
         if (reg_dados.removido == '1') {
-            memset(&reg_dados, 0, sizeof(dados));
+            reg_dados = cria_dados();
             rrn_atual++;
             continue;
         }
@@ -394,7 +396,7 @@ void atualizar_registros_dinamico(FILE *bin, NoHash *tabela[],
             qtd_atualizacoes++;
         }
         
-        memset(&reg_dados, 0, sizeof(dados));
+        reg_dados =cria_dados();
         rrn_atual++;
     }
     
@@ -430,6 +432,10 @@ void atualizar_registros_dinamico(FILE *bin, NoHash *tabela[],
     
     free(atualizacoes);
 }
+
+
+
+
 
 void ler_registro_entrada(dados *reg_dados) {
     char strCodEstacao[50];
@@ -524,19 +530,5 @@ void inserir_registro_dinamico(
     
 }
 
-// Função que verifica se arquivo foi realmente aberto, emitindo mensagem de erro e encerrando programa senão
-int verifica_se_foi_aberto(FILE* arq0, FILE* arq1, int tem_dois_arquivos) {
-    
-    // Verifica se o primeiro arquivo não existe ou o segundo não existe e esperamos ter 2 arquivos
-    if (arq0 == NULL || (tem_dois_arquivos && arq1 == NULL)) {
-        
-        printf("Falha no processamento do arquivo.\n");
-        
-        // fecha o que tiver aberto
-        if (arq0 != NULL) fclose(arq0);
-        if (arq1 != NULL) fclose(arq1);
 
-        return 1;
-    }
-    return 0;
-}
+

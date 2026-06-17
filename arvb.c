@@ -34,18 +34,7 @@ int alocar_rrn_no_arvore(FILE *arq_index, cab_indice *cab_ind) {
 
 
 
-/*Algoritmo Driver: Cria a lista de nós da árvore.
-Caso1: Arquivo/arvore n existe--> cria um arquivo p/leitura e escrita
-Caso2: Arquivo existe --> apenas abre arquivo p/escrita 
-    - Enquanto existe registros --> count é menor que proxRRN
-        - verifica se n é logicamente removido, senão vai pro proximo registro
-        - removido == 0, então tenta inserir na raiz
-        - segue a função de inserção
-            - retornou PROMOTION => raiz sofreu split
-            - cria novo nó
-        - Atualiza cabeçalho da arvore
-        - fecha arquivo
-*/
+
 void cria_arvore(FILE* arq_dados, FILE* index) {
 
 
@@ -62,7 +51,6 @@ void cria_arvore(FILE* arq_dados, FILE* index) {
 
     if (reg_cab_dados.status == '0') {
         printf("Falha no processamento do arquivo.\n");
-       
         return;
     }
 
@@ -79,12 +67,7 @@ void cria_arvore(FILE* arq_dados, FILE* index) {
             continue;
         }
 
-        insere_recebendo_chave_e_byteoffset(
-            index,
-            &index_cab,
-            reg_dados.codEstacao,
-            byteoffset_dados
-        );
+        insere_recebendo_chave_e_byteoffset( index,&index_cab,reg_dados.codEstacao, byteoffset_dados);
     }
 
     index_cab.status = '1';
@@ -106,26 +89,17 @@ void insere_recebendo_chave_e_byteoffset(FILE *indexes, cab_indice *index_cab, i
     int chave_promovida;
     int byte_dados_promovido;
 
-    int retorno_prom = insere_arvore(
-        indexes,
-        index_cab,
-        index_cab->noRaiz,
-        chave,
-        byteoffset_dados,
-        &filho_promovido,
-        &chave_promovida,
-        &byte_dados_promovido
-    );
+    int retorno_prom = insere_arvore(indexes, index_cab, index_cab->noRaiz, chave,byteoffset_dados,
+                                 &filho_promovido, &chave_promovida, &byte_dados_promovido);
 
     if (retorno_prom == PROMOTION) {
 
         int rrn_raiz_antiga = index_cab->noRaiz;
-
+        // se já existia raiz, atualiza o tipo de NO!
         if (rrn_raiz_antiga != NEGATIVO) {
 
             int byte_raiz_antiga = calculo_byteoffset_indice(rrn_raiz_antiga);
-
-            indice raiz_antiga;
+            indice raiz_antiga = new_indice();
 
             fseek(indexes, byte_raiz_antiga, SEEK_SET);
             ler_indice(indexes, &raiz_antiga);
@@ -142,6 +116,7 @@ void insere_recebendo_chave_e_byteoffset(FILE *indexes, cab_indice *index_cab, i
 
         indice nova_raiz = new_indice();
 
+        // a arvore estava vazia? a nova raiz é no folha
         if (rrn_raiz_antiga == NEGATIVO) {
             nova_raiz.tipoNo = NEGATIVO;
         } else {
@@ -167,29 +142,10 @@ void insere_recebendo_chave_e_byteoffset(FILE *indexes, cab_indice *index_cab, i
     }
 }
 
-/*Assumindo q existe o arquivo de indice existe e é != NULL.
-Busca uma chave única int - codEstacao-  num nó da árvore.
-Caso 1: Arvore com elementos --> rrn da raiz >=0
-Caso 2: Arvore vazia --> rrn da raiz == -1
-Parametros: Arquivo de indices, rrn do no onde faz a busca, a chave para busca, 
-        e a posicao (1, 2, 3) da chave. posicao == -1 se a chave n existe
-        ------util para inserção
-Retorna : RRN do nó onde DEVERIA ESTAR ou ESTÁ.
 
-->Chama a função no nó raiz
-    - arvore existe? 
-        - Se não - retorna -1
-        - Se sim - continua
-    - No atual foi removido?
-        - retorna -1, ou seja, não encontrou a chave
-    - Senão - Lê nó (posiciona o ponteiro para ler o no exato)
-        - chave está no nó ? 
-            - se sim, acaba a busca, retorna o rrn e atualiza a pos_chava_no
-            - se não, verifica se é nó intermediário
-                - se sim, continua a busca recursivamente
-                - se não, termina a busca. E no folha - logo sem descendentes p/buscar.
 
-*/
+
+
 int busca_arvore(FILE *arquivo, int rrn_no, int chave_unica, int *pos_chave_no){
     if(rrn_no==NEGATIVO){
         if (pos_chave_no != NULL) *pos_chave_no = NEGATIVO;
@@ -219,8 +175,10 @@ int busca_arvore(FILE *arquivo, int rrn_no, int chave_unica, int *pos_chave_no){
         if (pos_chave_no != NULL) *pos_chave_no = 3;
         return rrn_no;
     }
-    //é no folha?
+
+    //nao encontrou a chave E é no folha?
     if (aux.tipoNo == NEGATIVO) { 
+        //retorna o rrn onde essa chave DEVERIA estar
         if (pos_chave_no != NULL) *pos_chave_no = NEGATIVO; 
         return rrn_no; 
     }
@@ -254,37 +212,13 @@ int busca_arvore(FILE *arquivo, int rrn_no, int chave_unica, int *pos_chave_no){
 
 
 
-/*Parametros: arquivo index arvore, rrn do nó atual a ser inserido, 
-                chave a ser inserida,ponteiro da chave,  chave da promoção,
-                 nó filho promovido.
-Retorna INT : 1 se houve PROMOTION
-              -1 se houve ERRO
-              0 Padrão - No PROMOTION
-Caso base : rrn-atual = -1, promove a chave
-    OBS:Inserção apenas em No Folha  E começa por uma busca(na raiz!:))
-    - busca a posição esperada da chave
-        - encontrou a chave? -> retorna erro de chaveduplicada -> quando pos_chave_no != de -1 
-        - SENÃO- temos o rrn esperado daquela chave.
-            - lê o nó
-     - encontra a posicao esperada da chave no nó - 1, 2, 3
-    - ret_value = insere recursivo
-        -  NO_PROMOTION ou ERRO na pilha de recursão  ?
-            - retorna NO PROMOTION  OU NEGATIVO
-        - Senão tenta inserção no nó
-            - nó tem espaço?
-                - insere ordenado
-            - nó não tem espaço?
-                - split-> cria um novo no, ordena as chaves, escreve o no_esq
-                    escreve o no_dir, promove a chave mais a esquerda do no_dir, 
-                    com filho nó_dir.
-                retorna PROMOTION
 
-*/
 int insere_arvore(FILE* arq_index, cab_indice *cabecalho, int rrn_no , int chave, 
                     int byte_dados_chave , int *filho_promovido, int*chave_promovida, int *byte_dados_promovido){
 
     int valor_retorno, pos_chave_no;
     if (rrn_no == NEGATIVO){
+        //arvore vazia
         *chave_promovida = chave;
         *filho_promovido = NEGATIVO;
         *byte_dados_promovido = byte_dados_chave; 
@@ -298,13 +232,13 @@ int insere_arvore(FILE* arq_index, cab_indice *cabecalho, int rrn_no , int chave
         }
     }
     
-    
     indice no_aux; 
     int byteoffset = calculo_byteoffset_indice(rrn_no);
     fseek(arq_index, byteoffset, SEEK_SET);
     ler_indice(arq_index, &no_aux);
     
-
+    
+    
     int prox_rrn = NEGATIVO;
     if (chave < no_aux.C1) {
         prox_rrn = no_aux.arv1;
@@ -333,7 +267,7 @@ int insere_arvore(FILE* arq_index, cab_indice *cabecalho, int rrn_no , int chave
     fseek(arq_index, byteoffset, SEEK_SET);
     ler_indice(arq_index, &no_aux);
 
-    //No tem espaço?
+    //No tem espaço? 
     if (no_aux.nroChaves<3){
         insere_ordenado_no(&no_aux, *chave_promovida, *filho_promovido, *byte_dados_promovido);
         fseek(arq_index, byteoffset, SEEK_SET);
@@ -351,25 +285,14 @@ int insere_arvore(FILE* arq_index, cab_indice *cabecalho, int rrn_no , int chave
         *filho_promovido = novo_filho_promovido;
      return PROMOTION;
     } 
-
-
 }
 
 
 
 
-/*Sobreescreve o no de indice, para ordenar as chaves dentro dele.
- Como ele insere no nó, é assumido que nroChaves<3.
- Parametros: no p/sobrescerver, chave, filho dessa chave, e o ponteiro p/arquivo de dados.
-    - Se qtdChaves == 0 - insere no primeiro espaço 
-    - se qtdchaves == 1 --> 2 casos     
-                        - insere no espaço 2 
-                        - ou shifta e insere no inicio
-    - se qtdchaves ==2 --> 3 casos
-                        - insere no espaço 3
-                        - shifta tudo e insere no inicio
-                        - shifta o espaço 2 e insere no meio.
-*/
+
+
+
 void insere_ordenado_no(indice *no, int chave, int filho_promovido,  int byte_ponteiro){
     if(no->nroChaves == 0){
         //apenas insere no inicio
@@ -429,30 +352,12 @@ void insere_ordenado_no(indice *no, int chave, int filho_promovido,  int byte_po
 
 
 
-/* Cria um novo no, promove uma chave e a sub arvore, copiando os valores anteriores.
-Parametros: arquivo de indezx, cabeçalho do index, rrn do no, o proprio no, 
-            chave q deve ser inserida, o rrn filho, e o byte_ponteiro.
-            a chave q é realmente promovida, o seu byte ponteiro e seu filho
-    - Cria uma estrutura de comparação, com espaço para m+1 ->4 chaves, 4 ponteiro, 5 subarvores.
-    - copia as chaves da pag atual e compara com a chave.
-    - ordena as chaves
-    - aloca um novo no no index
-    - atualiza a chave a ser promovida e o filho a ser promovido 
-    - organiza as chaves nos 2 nós e retorna a novapagina.
-*/
-void split(
-    FILE *arq_index,
-    cab_indice *cab_ind,
-    int rrn_no_ant,
-    indice *no_ant,
-    int chave,
-    int byte_chave,
-    int filho_chave,
-    int *chave_promovida,
-    int *byte_promovido,
-    int *filho_promovido
-) {
-    int chaves_temp[4];
+
+
+void split (FILE *arq_index, cab_indice *cab_ind, int rrn_no_ant, indice *no_ant, int chave,
+           int byte_chave, int filho_chave,int *chave_promovida, int *byte_promovido, int *filho_promovido ){
+               
+               int chaves_temp[4];
     int byte_temp[4];
     int arv_temp[5];
 
@@ -532,17 +437,135 @@ void split(
 
     novo_no.removido = '0';
     novo_no.proximo = NEGATIVO;
-
+    
     *chave_promovida = chaves_temp[2];
     *byte_promovido = byte_temp[2];
     *filho_promovido = rrn_novo_no;
-
+    
     fseek(arq_index, calculo_byteoffset_indice(rrn_no_ant), SEEK_SET);
     escreve_indice(arq_index, no_ant);
 
     fseek(arq_index, calculo_byteoffset_indice(rrn_novo_no), SEEK_SET);
     escreve_indice(arq_index, &novo_no);
 }
+
+
+
+
+
+
+// Função principal para a remoção, ela desce até as folhas e depois volta corrigindo
+// o retorno da função indica se houve underflow
+int remover_recursivo_arvore(FILE *index, cab_indice *cab_index, int rrn_atual, int chave,int eh_raiz) {
+    indice no_atual;
+    int pos_chave;
+    int pos_filho;
+    int rrn_filho;
+    int chave_sucessora;
+    int pr_sucessor;
+    int houve_underflow;
+    // caso base da árvore, já chegamos no final (indicado pello rnn negativo), então acabou a recursão
+    if (rrn_atual == NEGATIVO) {
+        return 0;
+    }
+    // começa lendo o no dá arvore
+    ler_no_arvore(index, rrn_atual, &no_atual);
+    // se ele está removido não precisamo mexer nele
+    if (no_atual.removido == '1') {
+        return 0;
+    }
+
+    pos_chave = posicao_chave_no(&no_atual, chave);
+    // primeiro caso, chava está no nó atual
+    if (pos_chave != NEGATIVO) {
+        // Caso A, caso o nó for folha
+        if (no_eh_folha(&no_atual)) {
+            // Removemos o nó, verificando se deu underflow ou não
+            remover_chave_da_pagina(&no_atual, pos_chave);
+            atualizar_tipo_no(&no_atual, cab_index, rrn_atual);
+            escrever_no_arvore(index, rrn_atual, &no_atual);
+
+            if (!eh_raiz && no_atual.nroChaves < MIN_CHAVES_B) return 1;
+            return 0;
+        }
+
+        // Caso B, a chave não está na raiz
+        rrn_filho = obter_filho(&no_atual, pos_chave + 1);
+        // encontra o sucessor na subárvore dada
+        encontrar_sucessor(index,rrn_filho,&chave_sucessora,&pr_sucessor);
+
+        if (chave_sucessora == NEGATIVO) return 0;
+        setar_chave_no_pai(&no_atual, pos_chave, chave_sucessora, pr_sucessor);
+        escrever_no_arvore(index, rrn_atual, &no_atual);
+
+        houve_underflow = remover_recursivo_arvore(
+            index,
+            cab_index,
+            rrn_filho,
+            chave_sucessora,
+            0
+        );
+
+        if (houve_underflow) {
+            corrigir_underflow_filho(
+                index,
+                cab_index,
+                rrn_atual,
+                pos_chave + 1
+            );
+        }
+
+        ler_no_arvore(index, rrn_atual, &no_atual);
+
+        if (!eh_raiz && no_atual.nroChaves < MIN_CHAVES_B) return 1;
+        return 0;
+    }
+
+    // segundo caso, chave não está no nó atual, então deveremos decidir para onde descer
+
+    // o nó é folha, então não precisamos mais descer
+    if (no_eh_folha(&no_atual)) {
+        return 0;
+    }
+
+    pos_filho = posicao_filho_para_chave(&no_atual, chave);
+    rrn_filho = obter_filho(&no_atual, pos_filho);
+
+    if (rrn_filho == NEGATIVO) {
+        return 0;
+    }
+    
+    houve_underflow = remover_recursivo_arvore(
+        index,
+        cab_index,
+        rrn_filho,
+        chave,
+        0
+    );
+
+    if (houve_underflow) {
+        corrigir_underflow_filho(
+            index,
+            cab_index,
+            rrn_atual,
+            pos_filho
+        );
+    }
+
+    ler_no_arvore(index, rrn_atual, &no_atual);
+
+    if (!eh_raiz && no_atual.nroChaves < MIN_CHAVES_B) {
+        return 1;
+    }
+
+    return 0;
+}
+
+
+
+
+
+
 
 void ler_no_arvore(FILE *index, int rrn, indice *no) {
     fseek(index, calculo_byteoffset_indice(rrn), SEEK_SET);
@@ -654,6 +677,13 @@ int obter_filho(indice *no, int pos) {
     return no->arv4;
 }
 
+
+
+
+
+
+
+
 void remover_chave_da_pagina(indice *no, int pos) {
     int chaves[3];
     int prs[3];
@@ -672,6 +702,9 @@ void remover_chave_da_pagina(indice *no, int pos) {
 
     vetores_para_no(no, no->nroChaves - 1, chaves, prs, filhos);
 }
+
+
+
 
 void remover_chave_e_filho_direito(indice *pai, int pos_chave) {
     int chaves[3];
@@ -701,6 +734,9 @@ void remover_chave_e_filho_direito(indice *pai, int pos_chave) {
     vetores_para_no(pai, n - 1, chaves, prs, filhos);
 }
 
+
+
+
 void setar_chave_no_pai(indice *pai, int pos, int chave, int pr) {
     if (pos == 0) {
         pai->C1 = chave;
@@ -725,6 +761,13 @@ int get_pr(indice *no, int pos) {
     if (pos == 1) return no->Pr2;
     return no->Pr3;
 }
+
+
+
+
+
+
+
 
 void empilhar_no_removido_arvore(FILE *index, cab_indice *cab_index, int rrn_removido) {
     indice no_removido;
@@ -769,6 +812,13 @@ void encontrar_sucessor(FILE *index, int rrn, int *chave_sucessora, int *pr_suce
     *chave_sucessora = NEGATIVO;
     *pr_sucessor = NEGATIVO;
 }
+
+
+
+
+
+
+
 
 void redistribuir_entre_nos(FILE *index,cab_indice *cab_index,int rrn_esq,int rrn_pai,int pos_chave_pai,int rrn_dir) {
     indice esq;
@@ -890,6 +940,14 @@ void redistribuir_entre_nos(FILE *index,cab_indice *cab_index,int rrn_esq,int rr
     escrever_no_arvore(index, rrn_pai, &pai);
 }
 
+
+
+
+
+
+
+
+
 void concatenar_nos(FILE *index,cab_indice *cab_index,int rrn_esq,int rrn_pai,int pos_chave_pai,int rrn_dir) {
     indice esq;
     indice dir;
@@ -966,62 +1024,8 @@ void concatenar_nos(FILE *index,cab_indice *cab_index,int rrn_esq,int rrn_pai,in
 }
 
 
-// função para corrigir underflow no nó filho(isto é, quando tem menos chaves que o mínimo), aqui damos um exemplos possíveis
-/* Primeiro caso de correção de underflow, pegando do filho a direita
-     [3, 4]
-[1, 2]  []  [5, 6]
-
-corrigi para 
-
-     [3, 5]
-[1, 2]  [4]  [6]
 
 
-Segundo caso de correção de underflow, pegando do filho a direita
-corrigi para 
-    [3, 4]
-[1, 2]  []  [5]
-
-Corrigi para 
-    [2, 4]
-[1]  [3]  [5]
-
-
-Terceiro caso de correção de underflow, concatenando com o filha a esquerda
-    [2, 3]
-[1]  []  [4]
-
-corrigi para 
-
-    [3]
-[1, 2]  [4]
-
-
-Quarto  caso de correção de underflow, pegando do filho a direita
-    [1, 3]
-[]  [2]  [4]
-
-corrigi para:
-
-    [3]
-[1, 2]  [4]
-
-Mas e se ter underflow do nó de cima? aí entra a lógica recursiva!
-    [1]
-[]  [2]  [4]
-
-vai para:
-        [5, 6]
-    []          [7, 8]
-[1, 2] [4]
-
-vai para:
-        [6, 7]
-    [5]          [8]
-[1, 2] [4]
-*/
-
-// função para corrigir underflow no nó filho(isto é, quando tem menos chaves que o mínimo)
 void corrigir_underflow_filho(FILE *index, cab_indice *cab_index, int rrn_pai,int pos_filho) {
     indice pai;
     indice irmao;
@@ -1089,112 +1093,15 @@ void corrigir_underflow_filho(FILE *index, cab_indice *cab_index, int rrn_pai,in
     }
 }
 
-// Função principal para a remoção, ela desce até as folhas e depois volta corrigindo
-// o retorno da função indica se houve underflow
-int remover_recursivo_arvore(FILE *index, cab_indice *cab_index, int rrn_atual, int chave,int eh_raiz) {
-    indice no_atual;
-    int pos_chave;
-    int pos_filho;
-    int rrn_filho;
-    int chave_sucessora;
-    int pr_sucessor;
-    int houve_underflow;
-    // caso base da árvore, já chegamos no final (indicado pello rnn negativo), então acabou a recursão
-    if (rrn_atual == NEGATIVO) {
-        return 0;
-    }
-    // começa lendo o no dá arvore
-    ler_no_arvore(index, rrn_atual, &no_atual);
-    // se ele está removido não precisamo mexer nele
-    if (no_atual.removido == '1') {
-        return 0;
-    }
 
-    pos_chave = posicao_chave_no(&no_atual, chave);
-    // primeiro caso, chava está no nó atual
-    if (pos_chave != NEGATIVO) {
-        // Caso A, caso o nó for folha
-        if (no_eh_folha(&no_atual)) {
-            // Removemos o nó, verificando se deu underflow ou não
-            remover_chave_da_pagina(&no_atual, pos_chave);
-            atualizar_tipo_no(&no_atual, cab_index, rrn_atual);
-            escrever_no_arvore(index, rrn_atual, &no_atual);
 
-            if (!eh_raiz && no_atual.nroChaves < MIN_CHAVES_B) return 1;
-            return 0;
-        }
 
-        // Caso B, a chave não está na raiz
-        rrn_filho = obter_filho(&no_atual, pos_chave + 1);
-        // encontra o sucessor na subárvore dada
-        encontrar_sucessor(index,rrn_filho,&chave_sucessora,&pr_sucessor);
 
-        if (chave_sucessora == NEGATIVO) return 0;
-        setar_chave_no_pai(&no_atual, pos_chave, chave_sucessora, pr_sucessor);
-        escrever_no_arvore(index, rrn_atual, &no_atual);
 
-        houve_underflow = remover_recursivo_arvore(
-            index,
-            cab_index,
-            rrn_filho,
-            chave_sucessora,
-            0
-        );
 
-        if (houve_underflow) {
-            corrigir_underflow_filho(
-                index,
-                cab_index,
-                rrn_atual,
-                pos_chave + 1
-            );
-        }
 
-        ler_no_arvore(index, rrn_atual, &no_atual);
 
-        if (!eh_raiz && no_atual.nroChaves < MIN_CHAVES_B) return 1;
-        return 0;
-    }
 
-    // segundo caso, chave não está no nó atual, então deveremos decidir para onde descer
-
-    // o nó é folha, então não precisamos mais descer
-    if (no_eh_folha(&no_atual)) {
-        return 0;
-    }
-
-    pos_filho = posicao_filho_para_chave(&no_atual, chave);
-    rrn_filho = obter_filho(&no_atual, pos_filho);
-
-    if (rrn_filho == NEGATIVO) {
-        return 0;
-    }
-    
-    houve_underflow = remover_recursivo_arvore(
-        index,
-        cab_index,
-        rrn_filho,
-        chave,
-        0
-    );
-
-    if (houve_underflow) {
-        corrigir_underflow_filho(
-            index,
-            cab_index,
-            rrn_atual,
-            pos_filho
-        );
-    }
-
-    ler_no_arvore(index, rrn_atual, &no_atual);
-
-    if (!eh_raiz && no_atual.nroChaves < MIN_CHAVES_B) {
-        return 1;
-    }
-
-    return 0;
-}
 
 void ajustar_raiz_apos_remocao(FILE *index, cab_indice *cab_index) {
     indice raiz;
@@ -1239,6 +1146,13 @@ void ajustar_raiz_apos_remocao(FILE *index, cab_indice *cab_index) {
     }
 }
 
+
+
+
+
+
+
+
 void remove_chave_arvore(FILE *index,cab_indice *cab_index,int chave) {
     int pos_chave;
 
@@ -1260,6 +1174,10 @@ void remove_chave_arvore(FILE *index,cab_indice *cab_index,int chave) {
     // precisamos cuidar da raiz, já que ela é um caso especial (não tem pai) e não vai ser tratado no código recursivo
     ajustar_raiz_apos_remocao(index, cab_index);
 }
+
+
+
+
 
 // função para remover registros dinãmico usando a árvore
 void remover_registros_dinamico_com_arvore(FILE *bin, FILE *index, NoHash *tabela[],

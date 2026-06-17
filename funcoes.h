@@ -4,7 +4,7 @@
 #include "csv.h"
 
 /*------------------------------
-Funções relacionadas ao trabalho - utilizadas na main.
+Funções relacionadas ao trabalho 1 - lidam apenas com manipulação de  registro de dados
 --------------------------------
 */
 

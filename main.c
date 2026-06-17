@@ -45,7 +45,7 @@ int main() {
 
             case 6:
                 scanf("%s", nome_bin);
-                delete_from_where(tabela, nome_bin);
+                update_table(tabela, nome_bin);
                 break;
 
             case 7:

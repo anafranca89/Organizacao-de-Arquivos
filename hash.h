@@ -42,10 +42,17 @@ Funções Base Hash:
         Ao final o PONTEIRO JÁ ESTÁ no começo do arquivo.
         precisa dos ponteiros arqivo binario de dados ABERTO em leitura e tabela HASH inicializada*/
 void carregar_nomes_no_hash(FILE *bin, NoHash *tabela[]);
+
+
+
     //precisa da tabela HASH inicializada, e o tamanho da string e a propra string a inserir
 void inserir_hash(NoHash *tabela[], char *nomeLinha, int tamNomeLinha);
+
+
     //precisa da tabela HASH inicializada, e o tamanho da string e a propra string a remover
 void decrementar_hash(NoHash *tabela[], char *nomeEstacao, int tamNomeEstacao);
+
+
     //precisa da tabela HASH inicializada, e o tamanho da string e a propra string a buscar
 NoHash* buscar_hash(NoHash *tabela[], char *nomeLinha, int tamNomeLinha);
 
