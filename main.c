@@ -74,9 +74,13 @@ int main() {
                 scanf("%s %s %s %s", nome_bin, campo1, nome_bin2 , campo2);
                 nested_join(nome_bin,campo1, nome_bin2 , campo2 );
                 break;
-             case 12:
+            case 12:
                 scanf("%s %s %s %s %s", nome_bin, campo1, nome_bin2 , campo2, nome_index);
                 junction_join(nome_bin,campo1, nome_bin2 , campo2, nome_index);
+                break;
+            case 13:
+                scanf("%s %s %s", nome_bin, campo1, nome_bin2);
+                order_join(nome_bin,campo1, nome_bin2);
                 break;
         }
         liberar_tabela(tabela);
