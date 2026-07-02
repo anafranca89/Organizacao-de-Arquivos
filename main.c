@@ -1,17 +1,20 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "arvb.h"
-#include "funcoes.h"
 #include "switchfunctions.h"
+#include "join_functions.h"
 
 int main() {
     NoHash *tabela[TAM_TABELA];
 
     int operacao;
-    char nome_csv[100];
-    char nome_bin[100];
-    char nome_index[100];
+    char nome_csv[50];
+    char nome_bin[50];
+    char nome_bin2[50];
+    char nome_index[50];
+    
+    char campo1[50];
+    char campo2[50];
     int n;
     inicializar_tabela(tabela);
 
@@ -65,6 +68,11 @@ int main() {
             case 10:
                 scanf("%s %s %d", nome_bin, nome_index , &n);
                 delete_from_where_index(tabela, nome_bin, nome_index, n);
+                break;
+
+            case 11:
+                scanf("%s %s %s %s", nome_bin, campo1, nome_bin2 , campo2);
+                nested_join(nome_bin,campo1, nome_bin2 , campo2 );
                 break;
         }
         liberar_tabela(tabela);

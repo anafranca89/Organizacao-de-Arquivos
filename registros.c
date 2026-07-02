@@ -335,3 +335,17 @@ void imprime_registro_dados(dados * reg_dados) {
     printf("\n");
 }
 
+
+
+
+void imprime_join_regdados(dados * reg_dados, dados *reg_dados2) {
+    
+    imprime_inteiro_ou_nulo(reg_dados->codEstacao);
+    imprime_texto_ou_nulo(reg_dados->nomeEstacao, reg_dados->tamNomeEstacao);
+    imprime_texto_ou_nulo(reg_dados->nomeLinha,reg_dados->tamNomeLinha);
+    imprime_inteiro_ou_nulo(reg_dados->codProxEstacao);
+
+    imprime_texto_ou_nulo(reg_dados2->nomeEstacao, reg_dados2->tamNomeEstacao);
+
+    printf("\n");
+}

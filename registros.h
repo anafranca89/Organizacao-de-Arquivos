@@ -108,5 +108,10 @@ void imprime_texto_ou_nulo(char *texto, int tamanho);
     /*imprime o registro de dados dado como parametro, usando a formatação necessária.
     */
 void imprime_registro_dados(dados* reg_dados);
+/// @brief imprime o registro obtido a partir do join. Imprime menos campos do que a imprime_registro_dados.
+/// @param reg_dados 
+/// @param reg_dados2 
+void imprime_join_regdados(dados * reg_dados, dados *reg_dados2);
+
 
 #endif

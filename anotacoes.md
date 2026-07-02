@@ -12,6 +12,20 @@
 
 #Trabalho
     - 1° abordagem: NESTED JOIN mais ineficiente -loop de for aninhado. N^2 
+
+
+
+        O algoritmo da junção de loop aninhado é definido como segue. Para cada
+        registro presente no arquivo arquivoA (loop externo), recupere cada registro do
+        arquivo arquivoB (loop interno) e teste se os dois registros satisfazem à condição de
+        junção Acampo1 = Bcampo1. Ou seja:
+        para cada registro em estacao1 faça // loop externo
+            para cada registro em estacao2 faça // loop interno
+                se estacao1.codProxEstacao = estacao2.codEstacao
+                então mostre os campos desejados de estacao1 e estacao2
+                fim-se
+            fim-para
+        fim-para
     - 2° abordagem: JUNCTION JOIN o mesmo, mas usando um registro de indice ARVB dado como parametro.
     - 3: ORDENAR o arquivo : faz uma lista 
         - cuidados - o arquivo n tem a qtd de registros q vamos ler.
