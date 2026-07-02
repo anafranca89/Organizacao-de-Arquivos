@@ -50,3 +50,15 @@ void nested_join(char *nome_bin, char *campo1, char *nome_bin2, char *campo2)
         printf("Registro Inexistente");
     }
 }
+
+void junction_join(char *arq1, char *campo1, char *arq2, char *campo2, char *indice){
+    FILE *bin = ler_binario(arq1);
+    FILE *bin2 = ler_binario(arq2);
+    FILE *arq_ind= ler_binario(indice);
+    if (bin == NULL || bin2 == NULL || arq_ind == NULL){
+        printf("Falha no processamento do arquivo.\n");
+        return;
+    }
+
+
+}
