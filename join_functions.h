@@ -33,18 +33,57 @@ void nested_join(char *nome_bin,char *campo1, char *nome_bin2 , char *campo2 );
 void junction_join(char *arq1, char* campo1, char * arq2, char*campo2,char *indice);
 
 /// @brief 
-/// @param nome_bin 
-/// @param campo1 
-/// @param nome_bin2 
-void order_join(char* nome_bin,char *campo1, char *nome_bin2);
+/**
+ * Função geral p/ ordenar um arquivo de registro desordenado. Usada em order_join.
+ */
+/// @param bin  arquivo binario de dados
+/// @param arq_ordenado arquivo de dados q/vai ser ordenado
+void ordena_arquivo_geral(FILE *bin, FILE *arq_ordenado);
 
-/// @brief 
+/// @brief
+/** Como precisamos comparar registros, a função qsort precisa como comparar esses elementos
+ * logo, essa função, ordena ou pelo codEstacao ou codProxestacao.
+ * Para os casos onde cod é NEGATIVO, eles vem depois de qualquer valor válido de cod.
+ */
 /// @param a 
 /// @param b 
 /// @return 0 SE são iguais; 1 se A > B e -1 se A<B
 int compara_dados(const void *a, const void *b);
 
-void ordena_arquivo_geral(FILE *bin, FILE *arq_index);
+/// @brief 
+/// @param nome_bin 
+/// @param campo1 
+/// @param nome_bin2 
+void order_join(char* nome_bin,char *campo1, char *nome_bin2);
+
+
+/// @brief 
+/// @param bin 
+/// @param reg 
+/// @param RRN 
+/// @param totalRRN 
+/// @return 
+int avanca_A(FILE *bin, dados *reg, int *RRN, int totalRRN);
+
+
+/// @brief 
+/// @param bin 
+/// @param reg 
+/// @param RRN 
+/// @param totalRRN 
+/// @return 
+int avanca_B(FILE *bin, dados *reg, int *RRN, int totalRRN);
+
+/// @brief 
+/**
+ * Ordenar os arquivos 1 e 2 usando, respectivamente CodProxEstacao e CodEstacao. Os campos sãonecessáriamente
+ * codProxestacao e codEstacao.
+ */
+/// @param arq1 arquivo de registros desordenado
+/// @param campo1 = CodProxEstacao
+/// @param arq2 arquivo de registros desordenado
+/// @param campo2 = CodEstacao
+void merge_sort_join(char *arq1, char *campo1, char* arq2,char* campo2);
 
 
 #endif

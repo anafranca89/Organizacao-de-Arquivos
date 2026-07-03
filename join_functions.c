@@ -138,7 +138,7 @@ void junction_join(char *arq1, char *campo1, char *arq2, char *campo2, char *arq
 
 
 
-
+//ordenacao = 1-> CoEstacao; 2-> codProxEstacao
 int ordenacao = 1;
 
 
@@ -173,6 +173,8 @@ int compara_dados(const void *a, const void *b ) {
 }
 
 void ordena_arquivo_geral(FILE *bin, FILE *arq_ordenado ){
+    if (bin == NULL || arq_ordenado == NULL) return;
+    //ponteiro deve estar no começo do arquivo!
     cabecalho cab;
     ler_cabecalho(bin, &cab);
 
@@ -221,6 +223,7 @@ void ordena_arquivo_geral(FILE *bin, FILE *arq_ordenado ){
 
 
 
+
 void order_join(char *arq1, char *campo1, char *arq2){
     FILE *bin = ler_binario(arq1);
     FILE *arq_ordenado = abrir_para_escrita_binário(arq2);
@@ -255,4 +258,120 @@ void order_join(char *arq1, char *campo1, char *arq2){
 
 
 
+int avanca_A(FILE *bin, dados *reg, int *RRN, int totalRRN) {
+    while (*RRN < totalRRN) {
+        ler_regdados(bin, reg);
+        (*RRN)++;
+        if (reg->removido != '1') return 1; // nao foi removido
+    }
+    return 0;
+}
 
+int avanca_B(FILE *bin, dados *reg, int *RRN, int totalRRN) {
+    while (*RRN < totalRRN) {
+        ler_regdados(bin, reg);
+        (*RRN)++;
+        if (reg->removido != '1') return 1; // registro válido
+    }
+    return 0; 
+}
+
+
+
+
+
+
+void merge_sort_join(char *arq1, char *campo1, char *arq2, char *campo2){
+    FILE *bin = ler_binario(arq1);
+    FILE *bin2 = ler_binario(arq2);
+    if(bin == NULL || bin2==NULL ){
+        printf("Falha no processamento do arquivo.\n");
+        if(bin != NULL) fclose(bin);
+        if(bin2 != NULL) fclose(bin2);
+        return;
+    } 
+
+    //cria arq temporatios que serao os ordenados
+    FILE *temp1 = cria_escreve_binario("temp1.bin");
+    FILE *temp2 = cria_escreve_binario("temp2.bin");
+    
+    // Ordenar os arquivos 1 e 2
+    //Pelo codestacao ou proxestacao?
+    if (strcmp(campo1, "codProxEstacao") == 0) {
+        ordenacao = 2;
+    }else {
+        return;
+    }
+    ordena_arquivo_geral(bin, temp1);
+
+    if (strcmp(campo2, "codEstacao") == 0) ordenacao = 1;
+    else return;
+    ordena_arquivo_geral(bin2, temp2);
+    fclose(bin); fclose(bin2);
+    fclose(temp1); fclose(temp2);
+
+    //le ambos os arquivos ao mesmo tempo
+    FILE *f1_ordenado = ler_binario("temp1.bin");
+    FILE *f2_ordenado = ler_binario("temp2.bin");
+
+
+    cabecalho cab1, cab2;
+    ler_cabecalho(f1_ordenado, &cab1);
+    ler_cabecalho(f2_ordenado, &cab2);
+
+    int rrn1 = 0, rrn2 = 0;
+    dados reg1, reg2;
+
+    int tem1 = avanca_A(f1_ordenado, &reg1, &rrn1, cab1.proxRRN);
+    int tem2 = avanca_B(f2_ordenado, &reg2, &rrn2, cab2.proxRRN);
+
+    int encontrou_match = 0;
+
+    while (tem1 && tem2) {
+        int key1, key2;
+
+        // Extrai a chave do arquivo 1 dependendo do campo1
+        if (strcmp(campo1, "codProxEstacao") == 0) key1 = reg1.codProxEstacao;
+        else key1 = reg1.codEstacao;
+
+        // Extrai a chave do arquivo 2 dependendo do campo2
+        if (strcmp(campo2, "codEstacao") == 0) key2 = reg2.codEstacao;
+        else key2 = reg2.codProxEstacao;
+
+        // Se chegar nos valores nulos/vazios que o qsort jogou para o fim, encerra
+        if (key1 == NEGATIVO || key2 == NEGATIVO) {
+            break;
+        }
+
+        if (key1 < key2) {
+            // Chave do arquivo 1 é menor, avança arquivo 1
+            tem1 = avanca_A(f1_ordenado, &reg1, &rrn1, cab1.proxRRN);
+        } 
+        else if (key1 > key2) {
+            // Chave do arquivo 2 é menor, avança arquivo 2
+            tem2 = avanca_B(f2_ordenado, &reg2, &rrn2, cab2.proxRRN);
+        } 
+        else {
+            // achou o par - printa o registro
+            imprime_join_regdados(&reg1, &reg2);
+            encontrou_match = 1;
+
+            // Avança ambos para continuar a busca
+            tem1 = avanca_A(f1_ordenado, &reg1, &rrn1, cab1.proxRRN);
+            tem2 = avanca_B(f2_ordenado, &reg2, &rrn2, cab2.proxRRN);
+        }
+    }
+
+    if (!encontrou_match) {
+        printf("Registro inexistente.\n");
+    }
+
+    fclose(f1_ordenado);
+    fclose(f2_ordenado);
+
+    //remover os arquivo temporarios
+    remove("temp1.bin");
+    remove("temp2.bin");
+
+
+}

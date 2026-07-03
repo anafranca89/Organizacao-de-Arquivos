@@ -82,6 +82,11 @@ int main() {
                 scanf("%s %s %s", nome_bin, campo1, nome_bin2);
                 order_join(nome_bin,campo1, nome_bin2);
                 break;
+            case 14:
+                scanf("%s %s %s %s", nome_bin, campo1, nome_bin2, campo2);
+                merge_sort_join(nome_bin, campo1, nome_bin2, campo2);
+                break;
+
         }
         liberar_tabela(tabela);
         return 0;
