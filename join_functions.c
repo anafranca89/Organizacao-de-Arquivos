@@ -190,11 +190,11 @@ void ordena_arquivo_geral(FILE *bin, FILE *arq_ordenado){
     ler_cabecalho(bin, &cab);
 
     //LE  o arquivo 1 inteiro usando a qtd de registros = proxRRN
-    int qtd_registros = 0,capacidade=cab.proxRRN;
+    int qtd_registros = 0, capacidade=cab.proxRRN;
     dados *lista_registros = malloc(capacidade * sizeof(dados));
 
     // Loop de leitura até o fim do arquivo
-    for(int i=0; i<cab.proxRRN; i++) {
+    for(int i=0; i<capacidade; i++) {
         dados reg_aux;
         ler_regdados(bin, &reg_aux);
        
@@ -236,8 +236,6 @@ void order_join(char *arq1, char *campo1, char *arq2){
     FILE *arq_ordenado = abrir_para_escrita_binário(arq2);
     if(bin == NULL || arq_ordenado==NULL){
         printf("Falha no processamento do arquivo.\n");
-        /* if(bin != NULL) fclose(bin);
-        if(arq_ordenado != NULL) fclose(arq_ordenado); */
         return;
     } 
 
@@ -248,8 +246,7 @@ void order_join(char *arq1, char *campo1, char *arq2){
         ordenacao = 2;
     }else{
         printf("Falha no processamento do arquivo.\n");
-        /* fclose(bin);
-        fclose(arq_ordenado); */
+        
         return;
     } 
     ordena_arquivo_geral(bin, arq_ordenado);
@@ -304,8 +301,8 @@ void merge_sort_join(char *arq1, char *campo1, char *arq2, char *campo2){
     dados reg1, reg2;
     ler_regdados(f1_ordenado,&reg1);
     ler_regdados(f2_ordenado,&reg2);
-    int count_arq1 = 1, count_arq2 = 1;
-    
+/*     int count_arq1 = 1, count_arq2 = 1;
+ */    
     int encontrou_match = 0;
     
 
@@ -344,8 +341,8 @@ void merge_sort_join(char *arq1, char *campo1, char *arq2, char *campo2){
             // Avança ambos para continuar a busca
             ler_regdados(f1_ordenado,&reg1);
             ler_regdados(f2_ordenado,&reg2);
-            count_arq1++;
-            count_arq2++;
+            /* count_arq1++;
+            count_arq2++; */
         }
     }
 
