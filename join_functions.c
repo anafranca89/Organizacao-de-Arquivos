@@ -29,8 +29,10 @@ void nested_join(char *nome_bin, char *campo1, char *nome_bin2, char *campo2)
     ler_cabecalho(bin2, &cab2);
     int count_registros=0; // se nao teve junção
 
+
     //LOOP aninhado - para cada reg no arq1 tenta encontra o par no arquivo 2
     for(int i =0; i <cab.proxRRN; i++){
+        //nao precisa de fseek- já leu o reg inteiro
         //fseek(bin, calculo_byteoffset_dados(i), SEEK_SET);
         ler_regdados(bin, &dados1);
         if (dados1.removido == '1') continue;
@@ -61,10 +63,13 @@ void nested_join(char *nome_bin, char *campo1, char *nome_bin2, char *campo2)
 
 
 
+
+
 void junction_join(char *arq1, char *campo1, char *arq2, char *campo2, char *arq_index){
     FILE *bin = ler_binario(arq1);
     FILE *bin2 = ler_binario(arq2);
     FILE *arq_ind= ler_binario(arq_index);
+
     if (bin == NULL || bin2 == NULL || arq_ind == NULL){
         printf("Falha no processamento do arquivo.\n");
         return;
@@ -90,7 +95,7 @@ void junction_join(char *arq1, char *campo1, char *arq2, char *campo2, char *arq
         printf("Falha no processamento do arquivo.\n");
         return;
     }
-    int count_registros=0; // se nao teve junção
+    int count_registros=0; // flag para calcular se teve junção
 
 
 
@@ -98,6 +103,7 @@ void junction_join(char *arq1, char *campo1, char *arq2, char *campo2, char *arq
     for(int i =0; i <cab.proxRRN; i++){
         ler_regdados(bin, &dados1);
 
+        //usa funcao de busca em arvore b
         int posicao_na_pagina=-1;
         int rrn_encontrado = busca_arvore(arq_ind, cabindex.noRaiz, dados1.codProxEstacao, &posicao_na_pagina);
         
@@ -108,12 +114,14 @@ void junction_join(char *arq1, char *campo1, char *arq2, char *campo2, char *arq
             fseek(arq_ind, calculo_byteoffset_indice(rrn_encontrado), SEEK_SET);
             ler_indice(arq_ind, &no_atual);
 
+
+            //qual o byteoffset desse reg no arquivo de dados?
             long byte_dados = NEGATIVO;
             if (posicao_na_pagina == 1) byte_dados = no_atual.Pr1;
             else if (posicao_na_pagina == 2) byte_dados = no_atual.Pr2;
             else if (posicao_na_pagina == 3) byte_dados = no_atual.Pr3;
 
-            //achou o registro então busca os dados no arquivo de dados
+            //achou o registro então busca  no arquivo de dados
             fseek(bin2, byte_dados, SEEK_SET);
             ler_regdados(bin2, &dados2);
             if (byte_dados != -1) {
@@ -172,15 +180,19 @@ int compara_dados(const void *a, const void *b ) {
     return 0;
 }
 
-void ordena_arquivo_geral(FILE *bin, FILE *arq_ordenado ){
+
+
+//Função para APENAS ordenar qualquer arquivo de registro de dados
+void ordena_arquivo_geral(FILE *bin, FILE *arq_ordenado){
     if (bin == NULL || arq_ordenado == NULL) return;
     //ponteiro deve estar no começo do arquivo!
     cabecalho cab;
     ler_cabecalho(bin, &cab);
 
-    //LE  o arquivo 1 inteiro usando realloc de 50 em 50
-    int qtd_registros = 0,capacidade= 50;
+    //LE  o arquivo 1 inteiro usando a qtd de registros = proxRRN
+    int qtd_registros = 0,capacidade=cab.proxRRN;
     dados *lista_registros = malloc(capacidade * sizeof(dados));
+
     // Loop de leitura até o fim do arquivo
     for(int i=0; i<cab.proxRRN; i++) {
         dados reg_aux;
@@ -189,25 +201,20 @@ void ordena_arquivo_geral(FILE *bin, FILE *arq_ordenado ){
         //É removido - ignora
         if (reg_aux.removido == '1') continue;
         
-        //nao é removido 
+        //nao é removido - escreve ele
         lista_registros[qtd_registros] = reg_aux;
         qtd_registros++;
-
-        // Se atingiu o limite atual, expande mais 50 na capacidade da lista
-        if (qtd_registros == capacidade) {
-            capacidade += 50;
-            lista_registros = realloc(lista_registros, capacidade * sizeof(dados));
-        }
     }
 
     //ordena com qsort usando ordenação 1 ou 2.- funcao comparadados
     qsort(lista_registros, qtd_registros, sizeof(dados), compara_dados);
 
+    //começa a escrever - arquivo é inconsistente
     cab.status = '0'; 
     cab.proxRRN = qtd_registros; 
     escreve_cabecalho(arq_ordenado, &cab);
 
-    //escreve todos os registros
+    //escreve todos os registros lidos
     for (int i = 0; i < qtd_registros; i++) {
         escreve_regdados(arq_ordenado, &lista_registros[i]);
     }
@@ -229,8 +236,8 @@ void order_join(char *arq1, char *campo1, char *arq2){
     FILE *arq_ordenado = abrir_para_escrita_binário(arq2);
     if(bin == NULL || arq_ordenado==NULL){
         printf("Falha no processamento do arquivo.\n");
-        if(bin != NULL) fclose(bin);
-        if(arq_ordenado != NULL) fclose(arq_ordenado);
+        /* if(bin != NULL) fclose(bin);
+        if(arq_ordenado != NULL) fclose(arq_ordenado); */
         return;
     } 
 
@@ -241,8 +248,8 @@ void order_join(char *arq1, char *campo1, char *arq2){
         ordenacao = 2;
     }else{
         printf("Falha no processamento do arquivo.\n");
-        fclose(bin);
-        fclose(arq_ordenado);
+        /* fclose(bin);
+        fclose(arq_ordenado); */
         return;
     } 
     ordena_arquivo_geral(bin, arq_ordenado);
@@ -252,29 +259,6 @@ void order_join(char *arq1, char *campo1, char *arq2){
 }
 
 
-
-
-
-
-
-
-int avanca_A(FILE *bin, dados *reg, int *RRN, int totalRRN) {
-    while (*RRN < totalRRN) {
-        ler_regdados(bin, reg);
-        (*RRN)++;
-        if (reg->removido != '1') return 1; // nao foi removido
-    }
-    return 0;
-}
-
-int avanca_B(FILE *bin, dados *reg, int *RRN, int totalRRN) {
-    while (*RRN < totalRRN) {
-        ler_regdados(bin, reg);
-        (*RRN)++;
-        if (reg->removido != '1') return 1; // registro válido
-    }
-    return 0; 
-}
 
 
 
@@ -297,37 +281,36 @@ void merge_sort_join(char *arq1, char *campo1, char *arq2, char *campo2){
     
     // Ordenar os arquivos 1 e 2
     //Pelo codestacao ou proxestacao?
-    if (strcmp(campo1, "codProxEstacao") == 0) {
-        ordenacao = 2;
-    }else {
-        return;
-    }
+    if (strcmp(campo1, "codProxEstacao") == 0)ordenacao = 2;
+    else return;
     ordena_arquivo_geral(bin, temp1);
 
     if (strcmp(campo2, "codEstacao") == 0) ordenacao = 1;
     else return;
     ordena_arquivo_geral(bin2, temp2);
+
     fclose(bin); fclose(bin2);
     fclose(temp1); fclose(temp2);
 
     //le ambos os arquivos ao mesmo tempo
     FILE *f1_ordenado = ler_binario("temp1.bin");
     FILE *f2_ordenado = ler_binario("temp2.bin");
-
+    
 
     cabecalho cab1, cab2;
     ler_cabecalho(f1_ordenado, &cab1);
     ler_cabecalho(f2_ordenado, &cab2);
-
-    int rrn1 = 0, rrn2 = 0;
+    
     dados reg1, reg2;
-
-    int tem1 = avanca_A(f1_ordenado, &reg1, &rrn1, cab1.proxRRN);
-    int tem2 = avanca_B(f2_ordenado, &reg2, &rrn2, cab2.proxRRN);
-
+    ler_regdados(f1_ordenado,&reg1);
+    ler_regdados(f2_ordenado,&reg2);
+    int count_arq1 = 1, count_arq2 = 1;
+    
     int encontrou_match = 0;
+    
 
-    while (tem1 && tem2) {
+    //o arquivo ordenado só tem os registros válidos - nao removido e proxRRN é a qtd de reg no arquivo
+    while(count_arq1<= cab1.proxRRN && count_arq2<= cab2.proxRRN) {
         int key1, key2;
 
         // Extrai a chave do arquivo 1 dependendo do campo1
@@ -345,11 +328,13 @@ void merge_sort_join(char *arq1, char *campo1, char *arq2, char *campo2){
 
         if (key1 < key2) {
             // Chave do arquivo 1 é menor, avança arquivo 1
-            tem1 = avanca_A(f1_ordenado, &reg1, &rrn1, cab1.proxRRN);
+            ler_regdados(f1_ordenado,&reg1);
+            count_arq1++;
         } 
         else if (key1 > key2) {
             // Chave do arquivo 2 é menor, avança arquivo 2
-            tem2 = avanca_B(f2_ordenado, &reg2, &rrn2, cab2.proxRRN);
+            ler_regdados(f2_ordenado,&reg2);
+            count_arq2++;
         } 
         else {
             // achou o par - printa o registro
@@ -357,8 +342,10 @@ void merge_sort_join(char *arq1, char *campo1, char *arq2, char *campo2){
             encontrou_match = 1;
 
             // Avança ambos para continuar a busca
-            tem1 = avanca_A(f1_ordenado, &reg1, &rrn1, cab1.proxRRN);
-            tem2 = avanca_B(f2_ordenado, &reg2, &rrn2, cab2.proxRRN);
+            ler_regdados(f1_ordenado,&reg1);
+            ler_regdados(f2_ordenado,&reg2);
+            count_arq1++;
+            count_arq2++;
         }
     }
 

@@ -4,6 +4,12 @@
 #include "switchfunctions.h"
 #include "join_functions.h"
 
+/**
+ * Ana Julia Lopez Franqueira de França - 16838230
+ * Leonardo Biondo Bertho - 16881900
+ */
+
+
 int main() {
     NoHash *tabela[TAM_TABELA];
 

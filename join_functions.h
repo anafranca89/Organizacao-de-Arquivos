@@ -35,6 +35,10 @@ void junction_join(char *arq1, char* campo1, char * arq2, char*campo2,char *indi
 /// @brief 
 /**
  * Função geral p/ ordenar um arquivo de registro desordenado. Usada em order_join.
+ * O ponteiro do fseek deve estar no começo do arquivo!
+ * Ao fim da função o ponteiro do arqordenado esta no começo do registro de dados.
+ * Escreve todos os registros válidos no arq_ordenado de paramentro.
+ * O cabeçalho é mudado de acordo.
  */
 /// @param bin  arquivo binario de dados
 /// @param arq_ordenado arquivo de dados q/vai ser ordenado
@@ -50,34 +54,25 @@ void ordena_arquivo_geral(FILE *bin, FILE *arq_ordenado);
 /// @return 0 SE são iguais; 1 se A > B e -1 se A<B
 int compara_dados(const void *a, const void *b);
 
+
 /// @brief 
-/// @param nome_bin 
-/// @param campo1 
-/// @param nome_bin2 
+/**Funcionalidade que lida com os aruqivos gerais e verificação de segurança dos campos de parametro
+ * Chama o Binárionatela e controla o abrir e fechar dos arquivos.
+ */
+/// @param nome_bin  arquivo 1 
+/// @param campo1 = codEstacao OU codProxEstacao
+/// @param nome_bin2  arquivo2
 void order_join(char* nome_bin,char *campo1, char *nome_bin2);
 
 
-/// @brief 
-/// @param bin 
-/// @param reg 
-/// @param RRN 
-/// @param totalRRN 
-/// @return 
-int avanca_A(FILE *bin, dados *reg, int *RRN, int totalRRN);
-
-
-/// @brief 
-/// @param bin 
-/// @param reg 
-/// @param RRN 
-/// @param totalRRN 
-/// @return 
-int avanca_B(FILE *bin, dados *reg, int *RRN, int totalRRN);
 
 /// @brief 
 /**
  * Ordenar os arquivos 1 e 2 usando, respectivamente CodProxEstacao e CodEstacao. Os campos sãonecessáriamente
  * codProxestacao e codEstacao.
+ * Controla o abrir e fechar dos arquivos - cria arquivos temporários que são removidos na função.
+ * Enquanto tem registros em ambos os arquivos ordenados, verifica se deu match e 
+ * imprime com a formatação do join.
  */
 /// @param arq1 arquivo de registros desordenado
 /// @param campo1 = CodProxEstacao
